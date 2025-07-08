@@ -5,7 +5,11 @@ class BoolExpr;
 
 class MiterStrategy {
  public:
-  MiterStrategy();
+  MiterStrategy() = default;
+
+  void build();
+
+  void collectInputs();
 
  private:
   std::vector<BoolExpr> POs_;
