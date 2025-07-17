@@ -11,17 +11,15 @@ namespace KEPLER_FORMAL {
 
 class NajaClause {
  public:
-  typedef std::vector<const naja::NL::SNLTruthTable&> InputsToMerge;
 
-  NajaClause(InputsToMerge inputsToMerge,
+  NajaClause(const std::vector<const naja::NL::SNLTruthTable*>& inputsToMerge,
+                   const naja::NL::SNLTruthTable& base) : inputsToMerge_(inputsToMerge), base_(base) {}
+
+  naja::NL::SNLTruthTable mergeTruthTables(const std::vector<const naja::NL::SNLTruthTable*>&,
                    const naja::NL::SNLTruthTable& base);
 
-  naja::NL::SNLTruthTable mergeTruthTables(
-    const naja::NL::SNLTruthTable &childTT,
-    const std::vector<naja::NL::SNLTruthTable> &parents);
-
  private:
-  const InputsToMerge& inputsToMerge_;
+  const std::vector<const naja::NL::SNLTruthTable*>& inputsToMerge_;
   const naja::NL::SNLTruthTable& base_;
   BoolExpr boolExpr_;
 };
