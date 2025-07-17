@@ -5,3 +5,4 @@
 add_subdirectory(bin)
 add_subdirectory(formal)
 add_subdirectory(strategies)
+add_subdirectory(clauses)

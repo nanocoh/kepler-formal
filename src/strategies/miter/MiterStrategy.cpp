@@ -105,4 +105,7 @@ std::vector<DNLID> MiterStrategy::collectOutputs() {
 
 void MiterStrategy::build() {
   // Collect inputs
+  inputs_ = collectInputs();
+  // Collect outputs
+  outputs_ = collectOutputs();
 }
