@@ -56,9 +56,9 @@ void SNLLogicCloud::compute() {
     }
   }
   while (!reachedPIs) {
-    inputs_ = newIterationInputs;
+    currentIterationInputs_ = newIterationInputs;
     std::vector<const naja::NL::SNLTruthTable*> inputsToMerge;
-    for (auto input : inputs_) {
+    for (auto input : currentIterationInputs_) {
       if (!isInput(input)) {
         // Create a feed trhough snl truth table with mask 10 and 1 input
         SNLTruthTable tt(2, 1);

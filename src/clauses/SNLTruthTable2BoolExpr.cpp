@@ -1,4 +1,5 @@
 #include "SNLTruthTable.h"
+#include "SNLTruthTable2BoolExpr.h"
 #include "BoolExpr.h"
 #include <memory>
 #include <string>
