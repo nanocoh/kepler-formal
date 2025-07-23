@@ -1,27 +1,33 @@
 #include <vector>
-#include "DNL.h"
 #include "BoolExpr.h"
+
+#pragma once
+
+namespace naja {
+namespace NL {
+class SNLDesign;
+}
+}  // namespace naja
 
 namespace KEPLER_FORMAL {
 
 class MiterStrategy {
  public:
-  MiterStrategy() = default;
+  MiterStrategy(naja::NL::SNLDesign* top0, naja::NL::SNLDesign* top1)
+      : top0_(top0), top1_(top1) {}
 
-  void build();
-
-  const std::vector<BoolExpr>& getPOs() const {
-    return POs_;
-  }
+  bool run();
 
  private:
- 
-  std::vector<naja::DNL::DNLID> collectInputs();
-  std::vector<naja::DNL::DNLID> collectOutputs();
+  std::shared_ptr<BoolExpr> buildMiter(
+      const std::vector<std::shared_ptr<BoolExpr>>& A,
+      const std::vector<std::shared_ptr<BoolExpr>>& B) const;
 
-  std::vector<BoolExpr> POs_;
-  std::vector<naja::DNL::DNLID> inputs_;
-  std::vector<naja::DNL::DNLID> outputs_;
+  naja::NL::SNLDesign* top0_ = nullptr;
+  naja::NL::SNLDesign* top1_ = nullptr;
+  std::vector<BoolExpr> POs0_;
+  std::vector<BoolExpr> POs1_;
+  BoolExpr miterClause_;
 };
 
 }  // namespace KEPLER_FORMAL

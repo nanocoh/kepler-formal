@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace KEPLER_FORMAL {
 
@@ -26,6 +27,7 @@ public:
     BoolExpr(Op op, std::shared_ptr<BoolExpr> a);                // unary
     BoolExpr(Op op, std::shared_ptr<BoolExpr> a, std::shared_ptr<BoolExpr> b); // binary
 
+    bool evaluate(const std::unordered_map<std::string,bool>& env) const;
     // Create false
     static std::shared_ptr<BoolExpr> createFalse() {
         return Var("FALSE");
@@ -34,7 +36,10 @@ public:
     static std::shared_ptr<BoolExpr> createTrue() {
         return Var("TRUE");
     }
-
+    Op getOp() const { return op_; }
+    const std::string& getName() const { return name_; }
+    const std::shared_ptr<BoolExpr>& getLeft() const { return left_; }
+    const std::shared_ptr<BoolExpr>& getRight() const { return right_; }
 private:
     Op op_;
     std::string name_;

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create a static library target
 add_library(formal_strategies STATIC
+    miter/BuildPrimaryOutputClauses.cpp
     miter/MiterStrategy.cpp
 )
 

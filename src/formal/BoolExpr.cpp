@@ -67,3 +67,36 @@ std::string BoolExpr::toString() const {
     Print(oss);
     return oss.str();
 }
+
+// BoolExpr.cpp
+#include "BoolExpr.h"
+#include <stdexcept>
+
+namespace KEPLER_FORMAL {
+
+bool BoolExpr::evaluate(const std::unordered_map<std::string,bool>& env) const {
+    switch (op_) {
+        case Op::VAR: {
+            auto it = env.find(name_);
+            if (it == env.end())
+                throw std::runtime_error("Undefined variable: " + name_);
+            return it->second;
+        }
+        case Op::NOT:
+            return !left_->evaluate(env);
+
+        case Op::AND:
+            return left_->evaluate(env) && right_->evaluate(env);
+
+        case Op::OR:
+            return left_->evaluate(env) || right_->evaluate(env);
+
+        case Op::XOR:
+            return left_->evaluate(env) ^ right_->evaluate(env);
+    }
+    // Should never reach here
+    return false;
+}
+
+} // namespace KEPLER_FORMAL
+

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create a static library target
 add_library(formal_structures STATIC
     BoolExpr.cpp
+    SimpleSatSolver.cpp
 )
 
 # Make headers accessible to other targets
