@@ -1,3 +1,5 @@
+include(GoogleTest)
+
 cmake_minimum_required(VERSION 3.10)
 project(HelloTest)
 
@@ -9,9 +11,9 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Add main and test files
-add_executable(runTests MiterTests.cpp)
+add_executable(miterTests MiterTests.cpp)
 
-target_link_libraries(runTests
+target_link_libraries(miterTests
     naja_nl
     ${GTEST_LIBRARIES}
     naja_opt
@@ -24,8 +26,4 @@ target_link_libraries(runTests
     pthread
 )
 
-
-
-
-# Add test to CTest
-add_test(NAME HelloWorldTest COMMAND runTests)
+GTEST_DISCOVER_TESTS(miterTests)
