@@ -220,3 +220,19 @@ void BuildPrimaryOutputClauses::setOutputs2OutputsIDs() {
       outputs2outputsIDs_[output] = std::make_pair(path, termIDs);
   }
 }
+
+void BuildPrimaryOutputClauses::sortInputs() {
+  // Sort based on inputs2inputsIDs_ content
+  std::sort(inputs_.begin(), inputs_.end(),
+            [this](const DNLID& a, const DNLID& b) {
+              return inputs2inputsIDs_[a].first < inputs2inputsIDs_[b].first;
+            });
+}
+
+void BuildPrimaryOutputClauses::sortOutputs() {
+  // Sort based on outputs2outputsIDs_ content
+  std::sort(outputs_.begin(), outputs_.end(),
+            [this](const DNLID& a, const DNLID& b) {
+              return outputs2outputsIDs_[a].first < outputs2outputsIDs_[b].first;
+            });
+}

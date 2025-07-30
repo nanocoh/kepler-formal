@@ -17,14 +17,16 @@ class BuildPrimaryOutputClauses {
   const std::vector<naja::DNL::DNLID>& getOutputs() const { return outputs_; }
   const std::map<naja::DNL::DNLID, std::pair<std::vector<naja::NL::NLID::DesignID>, std::vector<naja::NL::NLID::DesignID>>>& getInputs2InputsIDs() const { return inputs2inputsIDs_; }
   const std::map<naja::DNL::DNLID, std::pair<std::vector<naja::NL::NLID::DesignID>, std::vector<naja::NL::NLID::DesignID>>>& getOutputs2OutputsIDs() const { return outputs2outputsIDs_; }
-
+  
  private:
 
   std::vector<naja::DNL::DNLID> collectInputs();
   void setInputs2InputsIDs();
-  void setOutputs2OutputsIDs();
+  void sortInputs();
   std::vector<naja::DNL::DNLID> collectOutputs();
-
+  void setOutputs2OutputsIDs();
+  void sortOutputs();
+  
   std::vector<std::shared_ptr<BoolExpr>> POs_;
   std::vector<naja::DNL::DNLID> inputs_;
   std::vector<naja::DNL::DNLID> outputs_;
