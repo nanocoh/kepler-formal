@@ -3,6 +3,7 @@
 #include "SNLDesignModeling.h"
 #include "SNLLogicCloud.h"
 #include "SNLTruthTable2BoolExpr.h"
+#include "Tree2BoolExpr.h"
 
 //#define DEBUG_PRINTS
 
@@ -155,36 +156,43 @@ void BuildPrimaryOutputClauses::build() {
     assert(cloud.getTruthTable().isInitialized());
     DEBUG_LOG("Truth Table: %s\n", cloud.getTruthTable().getString().c_str());
 
-    bool all0 = true;
-    for (size_t i = 0; i < cloud.getTruthTable().bits().size(); i++) {
-      if (cloud.getTruthTable().bits().bit(i)) {
-        DEBUG_LOG("Truth table has a 1 at position %zu\n", i);
-        all0 = false;
-        break;
-      }
-    }
+    // bool all0 = true;
+    // for (size_t i = 0; i < cloud.getTruthTable().bits().size(); i++) {
+    //   if (cloud.getTruthTable().bits().bit(i)) {
+    //     DEBUG_LOG("Truth table has a 1 at position %zu\n", i);
+    //     all0 = false;
+    //     break;
+    //   }
+    // }
 
-    if (all0) {
-      POs_.push_back(BoolExpr::createFalse());
-      continue;
-    }
+    // if (all0) {
+    //   POs_.push_back(BoolExpr::createFalse());
+    //   continue;
+    // }
 
-    bool all1 = true;
-    for (size_t i = 0; i < cloud.getTruthTable().bits().size(); i++) {
-      DEBUG_LOG("Truth table has a 1 at position %zu\n", i);
-      if (!cloud.getTruthTable().bits().bit(i)) {
-        all1 = false;
-        break;
-      }
-    }
+    // bool all1 = true;
+    // for (size_t i = 0; i < cloud.getTruthTable().bits().size(); i++) {
+    //   DEBUG_LOG("Truth table has a 1 at position %zu\n", i);
+    //   if (!cloud.getTruthTable().bits().bit(i)) {
+    //     all1 = false;
+    //     break;
+    //   }
+    // }
 
-    if (all1) {
-      POs_.push_back(BoolExpr::createTrue());
-      continue;
-    }
+    // if (all1) {
+    //   POs_.push_back(BoolExpr::createTrue());
+    //   continue;
+    // }
 
-    DEBUG_LOG("Truth table: %s\n", cloud.getTruthTable().getString().c_str());
-    POs_.push_back(TruthTableToBoolExpr::convert(cloud.getTruthTable(), varNames));
+    //DEBUG_LOG("Truth table: %s\n", cloud.getTruthTable().getString().c_str());
+    cloud.getTruthTable().print();
+    printf("BuildPrimaryOutputClauses VarNames size: %zu\n", varNames.size());
+    std::shared_ptr<BoolExpr> expr = Tree2BoolExpr::convert(cloud.getTruthTable(), varNames);
+    printf("done\n");
+    /*printf("Output term %s(%zu) expression: %s\n",
+           get()->getDNLTerminalFromID(out).getSnlBitTerm()->getName().getString().c_str(),
+           out, expr->toString().c_str());*/
+    POs_.push_back(Tree2BoolExpr::convert(cloud.getTruthTable(), varNames));
   }
   destroy();  // Clean up DNL instance
 }

@@ -5,7 +5,7 @@
 #include "BuildPrimaryOutputClauses.h"
 #include "NLUniverse.h"
 #include "SNLDesignModeling.h"
-#include "SNLDesignTruthTable.h"
+#include "SNLDesignModeling.h"
 #include "SNLLogicCloud.h"
 #include "SNLTruthTable2BoolExpr.h"
 
@@ -223,7 +223,9 @@ bool MiterStrategy::run() {
   solver.addClause(rootLit);
 
   // solve with no assumptions
+  printf("Started Glucose solving\n");
   bool sat = solver.solve();
+  printf("Finished Glucose solving: %s\n", sat ? "SAT" : "UNSAT");
 
   if (sat) {
     for (size_t i = 0; i < POs0.size(); ++i) {
@@ -283,6 +285,7 @@ bool MiterStrategy::run() {
     univ->setTopDesign(topInit_);
   }
   // if UNSAT → miter can never be true → outputs identical
+  printf("Circuits are %s\n", sat ? "DIFFERENT" : "IDENTICAL");
   return !sat;
 }
 

@@ -1,9 +1,9 @@
 #include "SNLLogicCloud.h"
-#include "SNLDesignTruthTable.h"
+#include "SNLDesignModeling.h"
 #include "SNLTruthTableMerger.h"
 #include <cassert>
 
-//#define DEBUG_PRINTS
+#define DEBUG_PRINTS
 
 #ifdef DEBUG_PRINTS
 #define DEBUG_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
@@ -36,7 +36,7 @@ void SNLLogicCloud::compute() {
     if (isInput(driver)) {
       currentIterationInputs_.push_back(driver);
       SNLTruthTable tt(1, 2);
-      table_ = tt;
+      table_ = SNLTruthTableTree(tt);
       return;
     }
     DEBUG_LOG("Instance name: %s\n",
@@ -50,7 +50,9 @@ void SNLLogicCloud::compute() {
     }
     DEBUG_LOG("model name: %s\n",
               inst.getSNLModel()->getName().getString().c_str());
-    table_ = SNLDesignTruthTable::getTruthTable(inst.getSNLModel());
+    table_ = SNLTruthTableTree(SNLDesignModeling::getTruthTable(inst.getSNLModel()));
+    assert(SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized() &&
+           "Truth table is not initialized");
     assert(table_.isInitialized() &&
            "Truth table for seed output term is not initialized");
   } else {
@@ -64,7 +66,7 @@ void SNLLogicCloud::compute() {
     }
     DEBUG_LOG("model name: %s\n",
               inst.getSNLModel()->getName().getString().c_str());
-    table_ = SNLDesignTruthTable::getTruthTable(inst.getSNLModel());
+    table_ = SNLDesignModeling::getTruthTable(inst.getSNLModel());
     assert(table_.isInitialized() &&
            "Truth table for seed output term is not initialized");
   }
@@ -93,7 +95,9 @@ void SNLLogicCloud::compute() {
     DEBUG_LOG("Current iteration inputs: %lu\n", newIterationInputs.size());
     currentIterationInputs_ = newIterationInputs;
     newIterationInputs.clear();
-    DEBUG_LOG("Truth table: %s\n", table_.getString().c_str());
+    //DEBUG_LOG("Truth table: %s\n", table_.getString().c_str());
+    printf("Truth table size: %zu\n", table_.size());
+    printf("Current iteration inputs size: %zu\n", currentIterationInputs_.size());
     assert(currentIterationInputs_.size() == table_.size());
 
     std::vector<naja::NL::SNLTruthTable> inputsToMerge;
@@ -136,10 +140,17 @@ void SNLLogicCloud::compute() {
 
       auto inst = dnl_.getDNLInstanceFromID(
           dnl_.getDNLTerminalFromID(driver).getDNLInstance().getID());
-      assert(SNLDesignTruthTable::getTruthTable(inst.getSNLModel()).isInitialized() &&
+      if (!SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized())
+      {
+        printf("Truth table for instance %s is not initialized\n",
+                  inst.getSNLModel()->getName().getString().c_str());
+        assert(SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized() &&
              "Truth table for instance is not initialized");
-
-      inputsToMerge.push_back(SNLDesignTruthTable::getTruthTable(inst.getSNLModel()));
+      }
+      
+      DEBUG_LOG("Instance name: %s\n",
+                inst.getSNLInstance()->getName().getString().c_str());
+      inputsToMerge.push_back(SNLDesignModeling::getTruthTable(inst.getSNLModel()));
 
       for (DNLID termID = inst.getTermIndexes().first;
            termID <= inst.getTermIndexes().second; termID++) {
@@ -158,12 +169,8 @@ void SNLLogicCloud::compute() {
     }
 
     DEBUG_LOG("Merging truth tables with %zu inputs\n", inputsToMerge.size());
-    DEBUG_LOG("Truth table %s\n", table_.getString().c_str());
-
-    SNLTruthTableMerger merger(inputsToMerge, table_);
-    merger.computeMerged();
-    table_ = merger.getMergedTable();
-
+    //DEBUG_LOG("Truth table %s\n", table_.getString().c_str());
+    table_.concatFull(inputsToMerge);
     reachedPIs = true;
     for (auto input : newIterationInputs) {
       if (!isInput(input) && !isOutput(input)) {
