@@ -50,8 +50,10 @@ void SNLLogicCloud::compute() {
     }
     DEBUG_LOG("model name: %s\n",
               inst.getSNLModel()->getName().getString().c_str());
-    table_ = SNLTruthTableTree(SNLDesignModeling::getTruthTable(inst.getSNLModel()));
-    assert(SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized() &&
+    table_ = SNLTruthTableTree(SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+        dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()));
+    assert(SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+        dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()).isInitialized() &&
            "Truth table is not initialized");
     assert(table_.isInitialized() &&
            "Truth table for seed output term is not initialized");
@@ -66,7 +68,8 @@ void SNLLogicCloud::compute() {
     }
     DEBUG_LOG("model name: %s\n",
               inst.getSNLModel()->getName().getString().c_str());
-    table_ = SNLDesignModeling::getTruthTable(inst.getSNLModel());
+    table_ = SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+        dnl_.getDNLTerminalFromID(seedOutputTerm_).getSnlBitTerm()->getID());
     assert(table_.isInitialized() &&
            "Truth table for seed output term is not initialized");
   }
@@ -140,17 +143,20 @@ void SNLLogicCloud::compute() {
 
       auto inst = dnl_.getDNLInstanceFromID(
           dnl_.getDNLTerminalFromID(driver).getDNLInstance().getID());
-      if (!SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized())
+      if (!SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+        dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()).isInitialized())
       {
         printf("Truth table for instance %s is not initialized\n",
                   inst.getSNLModel()->getName().getString().c_str());
-        assert(SNLDesignModeling::getTruthTable(inst.getSNLModel()).isInitialized() &&
+        assert(SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+          dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()).isInitialized() &&
              "Truth table for instance is not initialized");
       }
       
       DEBUG_LOG("Instance name: %s\n",
                 inst.getSNLInstance()->getName().getString().c_str());
-      inputsToMerge.push_back(SNLDesignModeling::getTruthTable(inst.getSNLModel()));
+      inputsToMerge.push_back(SNLDesignModeling::getTruthTable(inst.getSNLModel(),
+        dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()));
 
       for (DNLID termID = inst.getTermIndexes().first;
            termID <= inst.getTermIndexes().second; termID++) {
