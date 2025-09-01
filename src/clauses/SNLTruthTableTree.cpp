@@ -201,7 +201,7 @@ void SNLTruthTableTree::concat(size_t borderIndex, SNLTruthTable table)
 {
     uint32_t arity = table.size();
     // 1) refresh leaf‐slot info
-    updateBorderLeaves();
+    //updateBorderLeaves();
 
     concatBody(borderIndex, std::move(table));   
     numExternalInputs_ += (arity - 1);
@@ -217,7 +217,7 @@ void SNLTruthTableTree::concatFull(std::vector<SNLTruthTable> tables)
 {   
     size_t newNumInptuts = numExternalInputs_;
     //printf("--- concatFull: current numExternalInputs = %zu\n", newNumInptuts);
-    updateBorderLeaves();
+    //updateBorderLeaves();
     size_t n = tables.size();
     if (n > borderLeaves_.size()) {
         throw std::invalid_argument(
