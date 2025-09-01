@@ -15,11 +15,11 @@ using namespace KEPLER_FORMAL;
 using namespace naja::DNL;
 
 bool SNLLogicCloud::isInput(naja::DNL::DNLID termID) {
-  return std::find(PIs_.begin(), PIs_.end(), termID) != PIs_.end();
+  return PIs_.find(termID) != PIs_.end();
 }
 
 bool SNLLogicCloud::isOutput(naja::DNL::DNLID termID) {
-  return std::find(POs_.begin(), POs_.end(), termID) != POs_.end();
+  return POs_.find(termID) != POs_.end();
 }
 
 void SNLLogicCloud::compute() {
