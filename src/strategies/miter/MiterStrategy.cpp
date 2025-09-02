@@ -229,9 +229,9 @@ bool MiterStrategy::run() {
 
   if (sat) {
     for (size_t i = 0; i < POs0.size(); ++i) {
-      std::vector<std::shared_ptr<BoolExpr>> singlePOs0S;
+      tbb::concurrent_vector<std::shared_ptr<BoolExpr>> singlePOs0S;
       singlePOs0S.push_back(POs0[i]);
-      std::vector<std::shared_ptr<BoolExpr>> singlePOs1S;
+      tbb::concurrent_vector<std::shared_ptr<BoolExpr>> singlePOs1S;
       singlePOs1S.push_back(POs1[i]);
       auto singleMiter = buildMiter(singlePOs0S, singlePOs1S);
       
@@ -290,8 +290,8 @@ bool MiterStrategy::run() {
 }
 
 std::shared_ptr<BoolExpr> MiterStrategy::buildMiter(
-    const std::vector<std::shared_ptr<BoolExpr>>& A,
-    const std::vector<std::shared_ptr<BoolExpr>>& B) const {
+    const tbb::concurrent_vector<std::shared_ptr<BoolExpr>>& A,
+    const tbb::concurrent_vector<std::shared_ptr<BoolExpr>>& B) const {
   if (A.size() != B.size()) {
     printf("Miter inputs must match in length: %zu vs %zu\n", A.size(),
            B.size());
