@@ -5,7 +5,7 @@
 #include "SNLTruthTable2BoolExpr.h"
 #include "Tree2BoolExpr.h"
 
-#define DEBUG_PRINTS
+//#define DEBUG_PRINTS
 
 #ifdef DEBUG_PRINTS
 #define DEBUG_LOG(fmt, ...)  printf(fmt, ##__VA_ARGS__)
