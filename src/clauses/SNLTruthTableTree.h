@@ -8,82 +8,78 @@
 
 namespace KEPLER_FORMAL {
 
-/// Abstract base class for a node in the truth-table tree.
-struct ITTNode {
-    virtual ~ITTNode() = default;
-    virtual bool eval(const std::vector<bool>& extInputs) const = 0;
-};
-
-/// Leaf node representing one of the external inputs.
-struct InputNode : public ITTNode {
-    size_t inputIndex;  // which bit of the external vector
-
-    explicit InputNode(size_t idx);
-    bool eval(const std::vector<bool>& extInputs) const override;
-};
-
-/// Internal node wrapping an SNLTruthTable.
-/// Its children feed its inputs in table-input order.
-struct TableNode : public ITTNode {
-    naja::NL::SNLTruthTable table;
-    std::vector<std::unique_ptr<ITTNode>> children;
-
-    explicit TableNode(naja::NL::SNLTruthTable t);
-    void addChild(std::unique_ptr<ITTNode> child);
-    bool eval(const std::vector<bool>& extInputs) const override;
-};
-
-/// Composite wrapper presenting a single n-input interface,
-/// but built as a tree of smaller truth-tables.
 class SNLTruthTableTree {
 public:
-    // Default constructor: empty tree, zero inputs
-    SNLTruthTableTree();
+  /// A unified node: either an Input leaf or a Table internal node.
+  struct Node {
+    enum class Type { Input, Table } type;
 
-    SNLTruthTableTree(naja::NL::SNLTruthTable table);
-    /// @param root               existing root (InputNode or TableNode)
-    /// @param numExternalInputs  how many external bits eval() expects
-    SNLTruthTableTree(std::unique_ptr<ITTNode> root,
-                      size_t numExternalInputs);
+    // for Input
+    size_t inputIndex = 0;
 
-    /// current number of external inputs
-    size_t size() const;
+    // for Table
+    naja::NL::SNLTruthTable table;
+    std::vector<std::unique_ptr<Node>> children;
 
-    /// evaluate on one external-input vector
+    // constructors
+    explicit Node(size_t idx)
+      : type(Type::Input), inputIndex(idx) {}
+
+    explicit Node(naja::NL::SNLTruthTable tt)
+      : type(Type::Table), table(std::move(tt)) {}
+
+    // evaluate recursively
     bool eval(const std::vector<bool>& extInputs) const;
 
-    /// graft a new truth-table onto the free leaf-slot numbered
-    /// borderIndex.  The old InputNode becomes child 0; any extra
-    /// inputs spawn new InputNodes with fresh external indices.
-    /// external-input count grows by (table.size()−1).
-    void concat(size_t borderIndex, naja::NL::SNLTruthTable table);
+    // only valid if type==Table
+    void addChild(std::unique_ptr<Node> child) {
+      children.push_back(std::move(child));
+    }
+  };
 
-    /// expose the root node for external walkers (e.g. Tree2BoolExpr)
-    const ITTNode* getRoot() const { return root_.get(); }
+  // build an empty tree
+  SNLTruthTableTree();
 
-    void concatFull(std::vector<naja::NL::SNLTruthTable> tables);
+  // single-table root
+  SNLTruthTableTree(naja::NL::SNLTruthTable table);
 
-    bool isInitialized() const;
+  // wrap an existing root
+  SNLTruthTableTree(std::unique_ptr<Node> root, size_t numExternalInputs);
 
-    void print() const; 
+  // number of external inputs
+  size_t size() const;
+
+  // evaluate the whole tree
+  bool eval(const std::vector<bool>& extInputs) const;
+
+  // graft a single table at the given leaf‐slot or external index
+  void concat(size_t borderIndex, naja::NL::SNLTruthTable table);
+
+  // graft a batch of tables onto the first N border‐leaves
+  void concatFull(std::vector<naja::NL::SNLTruthTable> tables);
+
+  // access to the root node
+  const Node* getRoot() const { return root_.get(); }
+
+  bool isInitialized() const;
+  void print() const;
 
 private:
-    void concatBody(size_t borderIndex, naja::NL::SNLTruthTable table);
-    /// descriptor of each free leaf-slot in the tree
-    struct BorderLeaf {
-        TableNode* parent;  // nullptr if the leaf is the root
-        size_t childPos;    // which slot in parent->children
-        size_t extIndex;    // the InputNode.inputIndex being replaced
-    };
+  // describe a free leaf in the tree
+  struct BorderLeaf {
+    Node*  parent;    // nullptr if root
+    size_t childPos;  // position within parent->children
+    size_t extIndex;  // external‐input index
+  };
 
-    /// walk the tree and collect every InputNode leaf as a border slot
-    void updateBorderLeaves();
+  void updateBorderLeaves();
+  void concatBody(size_t borderIndex, naja::NL::SNLTruthTable table);
 
-    std::unique_ptr<ITTNode>   root_;
-    size_t                     numExternalInputs_ = -1;
-    std::vector<BorderLeaf>    borderLeaves_;
+  std::unique_ptr<Node>   root_;
+  size_t                  numExternalInputs_ = 0;
+  std::vector<BorderLeaf> borderLeaves_;
 };
 
-} // namespace naja::NL
+} // namespace KEPLER_FORMAL
 
 #endif // SNLTRUTHTABLETREE_H
