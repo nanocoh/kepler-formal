@@ -182,6 +182,7 @@ void BuildPrimaryOutputClauses::build() {
   outputs_ = collectOutputs();
   sortOutputs();
   size_t processedOutputs = 0;
+  tbb::task_arena arena(tbb::task_arena::automatic);
   tbb::parallel_for(tbb::blocked_range<DNLID>(0, outputs_.size()),
                     [&](const tbb::blocked_range<DNLID>& r) {
                       for (DNLID i = r.begin(); i < r.end(); ++i) {
