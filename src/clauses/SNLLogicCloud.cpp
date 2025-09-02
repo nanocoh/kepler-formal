@@ -152,8 +152,8 @@ void SNLLogicCloud::compute() {
       if (!SNLDesignModeling::getTruthTable(inst.getSNLModel(),
         dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()).isInitialized())
       {
-        //printf("Truth table for instance %s is not initialized\n",
-          //        inst.getSNLModel()->getName().getString().c_str());
+        printf("#####Truth table for instance %s is not initialized\n",
+                  inst.getSNLModel()->getName().getString().c_str());
         assert(SNLDesignModeling::getTruthTable(inst.getSNLModel(),
           dnl_.getDNLTerminalFromID(driver).getSnlBitTerm()->getID()).isInitialized() &&
              "Truth table for instance is not initialized");
