@@ -10,7 +10,7 @@ namespace KEPLER_FORMAL {
 class BuildPrimaryOutputClauses {
  public:
   BuildPrimaryOutputClauses() = default;
-
+  void collect();
   void build();
 
   const tbb::concurrent_vector<std::shared_ptr<BoolExpr>>& getPOs() const { return POs_; }

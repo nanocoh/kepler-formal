@@ -153,29 +153,108 @@ Glucose::Lit tseitinEncode(Glucose::SimpSolver& S,
 }
 }  // namespace
 
+void MiterStrategy::normalizeInputs(std::vector<naja::DNL::DNLID>& inputs0,
+                       std::vector<naja::DNL::DNLID>& inputs1) {
+    // find the intersection of inputs0 and inputs1 based on the getFullPathIDs of DNLTerminal and the diffs
+    std::unordered_map<naja::DNL::DNLID, std::vector<NLID::DesignObjectID>> inputs0Map;
+    for (const auto& input0 : inputs0) {
+      inputs0Map[input0] = DNL::get()->getDNLTerminalFromID(input0).getFullPathIDs();
+    }
+    std::unordered_map<naja::DNL::DNLID, std::vector<NLID::DesignObjectID>> inputs1Map;
+    for (const auto& input1 : inputs1) {
+      inputs1Map[input1] = DNL::get()->getDNLTerminalFromID(input1).getFullPathIDs();
+    }
+    std::vector<naja::DNL::DNLID> commonInputs;
+    for (const auto& [input0, path0] : inputs0Map) {
+      for (const auto& [input1, path1] : inputs1Map) {
+        if (path0 == path1) {
+          commonInputs.push_back(input0);
+          break;
+        }
+      }
+    }
+    std::vector<naja::DNL::DNLID> diff0;
+    for (const auto& input0 : inputs0) {
+      if (std::find(commonInputs.begin(), commonInputs.end(), input0) == commonInputs.end()) {
+        diff0.push_back(input0);
+      }
+    }
+    std::vector<naja::DNL::DNLID> diff1;
+    for (const auto& input1 : inputs1) {
+      if (std::find(commonInputs.begin(), commonInputs.end(), input1) == commonInputs.end()) {
+        diff1.push_back(input1);
+      }
+    }
+    inputs0 = commonInputs;
+    inputs0.insert(inputs0.end(), diff0.begin(), diff0.end());
+    inputs1 = commonInputs;
+    inputs1.insert(inputs1.end(), diff1.begin(), diff1.end());
+}
+
+void MiterStrategy::normalizeOutputs(std::vector<naja::DNL::DNLID>& outputs0,
+                        std::vector<naja::DNL::DNLID>& outputs1) {
+    // find the intersection of outputs0 and outputs1 based on the getFullPathIDs of DNLTerminal and the diffs
+    std::unordered_map<naja::DNL::DNLID, std::vector<NLID::DesignObjectID>> outputs0Map;
+    for (const auto& output0 : outputs0) {
+      outputs0Map[output0] = DNL::get()->getDNLTerminalFromID(output0).getFullPathIDs();
+    }
+    std::unordered_map<naja::DNL::DNLID, std::vector<NLID::DesignObjectID>> outputs1Map;
+    for (const auto& output1 : outputs1) {
+      outputs1Map[output1] = DNL::get()->getDNLTerminalFromID(output1).getFullPathIDs();
+    }
+    std::vector<naja::DNL::DNLID> commonOutputs;
+    for (const auto& [output0, path0] : outputs0Map) {
+      for (const auto& [output1, path1] : outputs1Map) {
+        if (path0 == path1) {
+          commonOutputs.push_back(output0);
+          break;
+        }
+      }
+    }
+    std::vector<naja::DNL::DNLID> diff0;
+    for (const auto& output0 : outputs0) {
+      if (std::find(commonOutputs.begin(), commonOutputs.end(), output0) == commonOutputs.end()) {
+        diff0.push_back(output0);
+      }
+    }
+    std::vector<naja::DNL::DNLID> diff1;
+    for (const auto& output1 : outputs1) {
+      if (std::find(commonOutputs.begin(), commonOutputs.end(), output1) == commonOutputs.end()) {
+        diff1.push_back(output1);
+      }
+    }
+    outputs0 = commonOutputs;
+    outputs0.insert(outputs0.end(), diff0.begin(), diff0.end());
+    outputs1 = commonOutputs;
+    outputs1.insert(outputs1.end(), diff1.begin(), diff1.end());
+}
+
 bool MiterStrategy::run() {
-  BuildPrimaryOutputClauses builder;
   // build both sets of POs
   topInit_ = NLUniverse::get()->getTopDesign();
   NLUniverse* univ = NLUniverse::get();
   naja::DNL::destroy();
   univ->setTopDesign(top0_);
-  builder.build();
-  const auto& PIs0 = builder.getInputs();
-  const auto& POs0 = builder.getPOs();
-  auto outputs0 = builder.getOutputs();
-  auto inputs2inputsIDs0 = builder.getInputs2InputsIDs();
-  auto outputs2outputsIDs0 = builder.getOutputs2OutputsIDs();
+  BuildPrimaryOutputClauses builder0;
+  builder0.collect();
+  builder0.build();
+  const auto& PIs0 = builder0.getInputs();
+  const auto& POs0 = builder0.getPOs();
+  auto outputs0 = builder0.getOutputs();
+  auto inputs2inputsIDs0 = builder0.getInputs2InputsIDs();
+  auto outputs2outputsIDs0 = builder0.getOutputs2OutputsIDs();
   naja::DNL::destroy();
   univ->setTopDesign(top1_);
-  builder.build();
-  const auto& PIs1 = builder.getInputs();
-  const auto& POs1 = builder.getPOs();
-  auto outputs1 = builder.getOutputs();
-  auto inputs2inputsIDs1 = builder.getInputs2InputsIDs();
-  auto outputs2outputsIDs1 = builder.getOutputs2OutputsIDs();
+  BuildPrimaryOutputClauses builder1;
+  builder1.collect();
+  builder1.build();
+  const auto& PIs1 = builder1.getInputs();
+  const auto& POs1 = builder1.getPOs();
+  auto outputs1 = builder1.getOutputs();
+  auto inputs2inputsIDs1 = builder1.getInputs2InputsIDs();
+  auto outputs2outputsIDs1 = builder1.getOutputs2OutputsIDs();
 
-  std::vector<naja::DNL::DNLID> outputs2DnlIds = builder.getOutputs();
+  std::vector<naja::DNL::DNLID> outputs2DnlIds = builder1.getOutputs();
 
   if (topInit_ != nullptr) {
     univ->setTopDesign(topInit_);

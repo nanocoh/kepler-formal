@@ -200,15 +200,24 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectOutputs() {
   return outputs;
 }
 
+void BuildPrimaryOutputClauses::collect() {
+  inputs_ = collectInputs();
+  outputs_ = collectOutputs();
+  sortInputs();
+  sortOutputs();
+}
+
 void BuildPrimaryOutputClauses::build() {
   POs_.clear();
-  inputs_ = collectInputs();
-  sortInputs();
-  outputs_ = collectOutputs();
-  sortOutputs();
+  POs_ = tbb::concurrent_vector<std::shared_ptr<BoolExpr>>(outputs_.size());
+  // inputs_ = collectInputs();
+  // sortInputs();
+  // outputs_ = collectOutputs();
+  // sortOutputs();
   size_t processedOutputs = 0;
   tbb::task_arena arena(20);
-  auto processOutput = [&](DNLID out) {
+  auto processOutput = [&](size_t i) {
+    DNLID out = outputs_[i];
     printf("Procssing output %zu/%zu: %s\n",
                                ++processedOutputs, outputs_.size(),
                                get()
@@ -217,6 +226,7 @@ void BuildPrimaryOutputClauses::build() {
                                    ->getName()
                                    .getString()
                                    .c_str());
+                        
                         SNLLogicCloud cloud(out, inputs_, outputs_);
                         cloud.compute();
 
@@ -231,21 +241,19 @@ void BuildPrimaryOutputClauses::build() {
                         /*std::shared_ptr<BoolExpr> expr = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);*/
                         
-                        POs_.push_back(Tree2BoolExpr::convert(
-                            cloud.getTruthTable(), varNames));
+                        POs_[i] = Tree2BoolExpr::convert(
+                            cloud.getTruthTable(), varNames);
                         //printf("size of expr: %lu\n", POs_.back()->size());
                       };
   if (getenv("KEPLER_NO_MT")) {
-    for (DNLID i = 0; i < outputs_.size(); ++i) {
-      auto out = outputs_[i];
-      processOutput(out);
+    for (size_t i = 0; i < outputs_.size(); ++i) {
+      processOutput(i);
     }
   } else {
     tbb::parallel_for(tbb::blocked_range<DNLID>(0, outputs_.size()),
                       [&](const tbb::blocked_range<DNLID>& r) {
                         for (DNLID i = r.begin(); i < r.end(); ++i) {
-                          auto out = outputs_[i];
-                          processOutput(out);
+                          processOutput(i);
                       }});
   }
   destroy();  // Clean up DNL instance
