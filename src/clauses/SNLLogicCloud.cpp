@@ -144,7 +144,7 @@ void SNLLogicCloud::compute() {
 
       auto driver = iso.getDrivers().front();
       if (isInput(driver)/* || isOutput(driver)*/) {
-        SNLTruthTable tt(1, 2);
+        //SNLTruthTable tt(1, 2);
         newIterationInputs.push_back(driver);
         DEBUG_LOG("Add input with id: %zu\n", driver);
         DEBUG_LOG("Adding top input: %s\n",

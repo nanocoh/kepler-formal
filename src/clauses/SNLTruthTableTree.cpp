@@ -6,6 +6,9 @@
 using namespace naja::NL;
 using namespace KEPLER_FORMAL;
 
+// Init Ptable holder
+const SNLTruthTable SNLTruthTableTree::PtableHolder_ = SNLTruthTable(1,2);
+
 //----------------------------------------------------------------------
 // Node::addChild
 //----------------------------------------------------------------------
@@ -30,7 +33,7 @@ void SNLTruthTableTree::Node::addChild(std::shared_ptr<Node> child) {
 //----------------------------------------------------------------------
 // Node::getTruthTable
 //----------------------------------------------------------------------
-SNLTruthTable SNLTruthTableTree::Node::getTruthTable() const {
+const SNLTruthTable& SNLTruthTableTree::Node::getTruthTable() const {
   if (type == Type::Table) {
     auto* model = const_cast<SNLDesign*>(naja::DNL::get()->getDNLInstanceFromID(dnlid).getSNLModel());
     return model->getTruthTable(
@@ -38,7 +41,7 @@ SNLTruthTable SNLTruthTableTree::Node::getTruthTable() const {
                    .getSnlBitTerm()->getOrderID());
   }
   else if (type == Type::P) {
-    return SNLTruthTable(1,2);
+    return PtableHolder_;
   }
   throw std::logic_error("getTruthTable: not a Table/P node");
 }

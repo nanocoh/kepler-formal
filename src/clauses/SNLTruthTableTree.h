@@ -63,7 +63,7 @@ public:
     void addChild(std::shared_ptr<Node> child);
 
     // get the table, only valid for Table and P nodes
-    SNLTruthTable getTruthTable() const;
+    const SNLTruthTable& getTruthTable() const;
   };
 
   //--- public API
@@ -101,6 +101,7 @@ private:
   size_t                  numExternalInputs_ = 0;
   std::vector<BorderLeaf> borderLeaves_;
   size_t                  lastID_ = 2;       // for debug
+  static const SNLTruthTable      PtableHolder_; // dummy table for P nodes
 };
 
 } // namespace KEPLER_FORMAL

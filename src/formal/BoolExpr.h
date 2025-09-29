@@ -75,12 +75,15 @@ private:
     };
 
     struct KeyHash {
+        static inline void hash_combine(std::size_t& seed, std::size_t v) noexcept {
+            seed ^= v + 0x9e3779b97f4a7c15ULL + (seed<<6) + (seed>>2);
+        }
         size_t operator()(Key const& k) const noexcept {
-            auto h0 = std::hash<int>()(int(k.op));
-            auto h1 = std::hash<size_t>()(k.varId);
-            auto h2 = std::hash<const void*>()((const void*)k.l);
-            auto h3 = std::hash<const void*>()((const void*)k.r);
-            return h0 ^ (h1<<1) ^ (h2<<2) ^ (h3<<3);
+            size_t seed = std::hash<int>()(int(k.op));
+            hash_combine(seed, std::hash<size_t>()(k.varId));
+            hash_combine(seed, std::hash<const void*>()((const void*)k.l));
+            hash_combine(seed, std::hash<const void*>()((const void*)k.r));
+            return seed;
         }
     };
 
