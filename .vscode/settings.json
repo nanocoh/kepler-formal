@@ -82,6 +82,7 @@
         "unordered_set": "cpp",
         "chrono": "cpp",
         "cassert": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "complex": "cpp"
     }
 }

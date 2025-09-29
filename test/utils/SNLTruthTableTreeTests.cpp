@@ -90,7 +90,7 @@ TEST(TableNodeTest, ThrowsOnTableSizeMismatch) {
   const uint64_t tinyMask = 0b01; // size=1
   // build a P node and attach two input children to simulate mismatch
   SNLTruthTableTree tree(Node::Type::P);
-  auto pnode = std::make_shared<Node>(&tree); // P node (no DNL)
+  auto pnode = std::make_shared<Node>(&tree, naja::DNL::DNLID_MAX, naja::DNL::DNLID_MAX); // P node (no DNL)
   pnode->addChild(std::make_shared<Node>(0, &tree));
   pnode->addChild(std::make_shared<Node>(1, &tree));
   // we can't call getTruthTable() without DNL wiring; instead assert children>tableSize

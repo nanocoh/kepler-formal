@@ -175,7 +175,7 @@ void MiterStrategy::normalizeInputs(std::vector<naja::DNL::DNLID>& inputs0,
     }
     size_t index = 0;
     for (const auto& [path0, input0] : inputs0Map) {
-      printf("input %zu from %lu\n", index++, inputs0Map.size());
+      //printf("input %zu from %lu\n", index++, inputs0Map.size());
       if (paths1.find(path0) != paths1.end()) {
         pathsCommon.insert(path0);
       }
@@ -216,7 +216,7 @@ void MiterStrategy::normalizeOutputs(std::vector<naja::DNL::DNLID>& outputs0,
     }
     size_t index = 0;
     for (const auto& [path0, output0] : outputs0Map) {
-      printf("output %zu from %lu\n", index++, outputs0Map.size());
+      //printf("output %zu from %lu\n", index++, outputs0Map.size());
       if (paths1.find(path0) != paths1.end()) {
         pathsCommon.insert(path0);
       }

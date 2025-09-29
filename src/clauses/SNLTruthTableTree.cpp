@@ -75,25 +75,31 @@ SNLTruthTableTree::SNLTruthTableTree()
   : root_(nullptr), numExternalInputs_(0) 
 {}
 
-SNLTruthTableTree::SNLTruthTableTree(Node::Type type) {
-  if (type != Node::Type::P)
-    throw std::invalid_argument("invalid type ctor");
+// SNLTruthTableTree::SNLTruthTableTree(Node::Type type) {
+//   if (type != Node::Type::P)
+//     throw std::invalid_argument("invalid type ctor");
 
-  root_ = std::make_shared<Node>(this);
-  root_->addChild(std::make_shared<Node>(0, this));
-  numExternalInputs_ = 1;
-}
+//   root_ = std::make_shared<Node>(this, naja::DNL::DNLID_MAX, naja::DNL::DNLID_MAX, Node::Type::P);
+//   root_->addChild(std::make_shared<Node>(0, this));
+//   numExternalInputs_ = 1;
+// }
 
 SNLTruthTableTree::SNLTruthTableTree(naja::DNL::DNLID instid,
-                                     naja::DNL::DNLID termid)
+                                     naja::DNL::DNLID termid, Node::Type type)
 {
+  root_ = std::make_shared<Node>(this, instid, termid, type);
+  if (type == Node::Type::P) {
+    root_->addChild(std::make_shared<Node>(0, this));
+    numExternalInputs_ = 1;
+    return;
+  }
   auto* model = const_cast<SNLDesign*>(naja::DNL::get()->getDNLInstanceFromID(instid).getSNLModel());
   const auto& table = model->getTruthTable(
     naja::DNL::get()->getDNLTerminalFromID(termid)
                  .getSnlBitTerm()->getOrderID());
 
   auto arity = table.size();
-  root_ = std::make_shared<Node>(this, instid, termid);
+  
   for (uint32_t i = 0; i < arity; ++i)
     root_->addChild(std::make_shared<Node>(i, this));
 
@@ -176,18 +182,18 @@ SNLTruthTableTree::concatBody(size_t borderIndex,
   // create new table/P node
   uint32_t arity=0;
   std::shared_ptr<Node> newNode;
-  if (instid!=naja::DNL::DNLID_MAX && termid!=naja::DNL::DNLID_MAX) {
+  const naja::DNL::DNLTerminalFull& term = naja::DNL::get()->getDNLTerminalFromID(termid);
+  if (instid!=naja::DNL::DNLID_MAX) { // the condition works but need to be refactored to if P node 
     auto* model = const_cast<SNLDesign*>(naja::DNL::get()->getDNLInstanceFromID(instid).getSNLModel());
     const auto& tbl = model->getTruthTable(
       naja::DNL::get()->getDNLTerminalFromID(termid)
                    .getSnlBitTerm()->getOrderID());
     arity = tbl.size();
     newNode = std::make_shared<Node>(this, instid, termid);
-  }
-  else {
-    auto tbl = SNLTruthTable(1,2);
-    arity = tbl.size();
-    newNode = std::make_shared<Node>(this);
+  } else {
+    //auto tbl = SNLTruthTable(1,2);
+    arity = 1;
+    newNode = std::make_shared<Node>(this, instid,  termid, Node::Type::P);
   }
 
   // re-use old leaf as first child, then fresh inputs
@@ -230,11 +236,12 @@ void SNLTruthTableTree::concatFull(
   if (tables.size() > borderLeaves_.size())
     throw std::invalid_argument("too many tables in concatFull");
 
-  for (size_t i=0;i<tables.size();++i) {
+  for (size_t i=0; i<tables.size();++i) {
     auto const& n = concatBody(i, tables[i].first, tables[i].second);
+    assert(n.getTruthTable().size() > 0 || newInputs > 0);
     newInputs += (n.getTruthTable().size() - 1);
   }
-  numExternalInputs_ = (size_t)newInputs;
+  numExternalInputs_ = (size_t) newInputs;
   updateBorderLeaves();
 }
 
@@ -262,6 +269,9 @@ void SNLTruthTableTree::print() const {
   std::vector<Frame> stk{{root_.get(), 0}};
   while(!stk.empty()) {
     auto [n,d] = stk.back(); stk.pop_back();
+    // print node content
+    printf("Node: Type=%d dnlid=%zu termid=%zu nodeID=%zu\n"
+      , (int)n->type, (size_t)n->dnlid, (size_t)n->termid, (size_t)n->nodeID);
     // print indentation + node info here…
     if (n->type == Node::Type::Table) {
       for (size_t i=n->children.size(); i-->0;)

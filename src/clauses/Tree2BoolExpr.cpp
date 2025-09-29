@@ -4,6 +4,7 @@
 #include "SNLTruthTableTree.h"     // for SNLTruthTableTree::Node
 #include "SNLTruthTable.h"
 #include "BoolExpr.h"
+#include "DNL.h"
 
 #include <unordered_map>
 #include <stdexcept>
@@ -123,13 +124,18 @@ Tree2BoolExpr::convert(
                     stack.emplace_back(c.get(), false);
             }
             else {
+                assert(node->type == SNLTruthTableTree::Node::Type::Input);
                 // input leaf
-                size_t vidx = node->inputIndex;
-                size_t vid  = toSizeT(varNames[vidx]);
-                memo[id]    = BoolExpr::Var(vid);
+                // size_t vidx = node->inputIndex;
+                // printf("Input index: %lu\n", vidx);
+                // printf("Var names size: %lu\n", varNames.size());
+                // assert(vidx < varNames.size());
+                // size_t vid  = toSizeT(varNames[vidx]);
+                //node->parent->termid; // unused, but ensures parent exists  
+                assert(node->parent.lock()->type == SNLTruthTableTree::Node::Type::P);
+                memo[id]    = BoolExpr::Var(node->parent.lock()->termid);
             }
-        }
-        else {
+        } else {
             // post-visit for Table / P
             auto tbl  = node->getTruthTable();
             uint32_t k = tbl.size();

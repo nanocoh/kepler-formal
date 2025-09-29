@@ -15,7 +15,8 @@ public:
   struct Node 
     : public std::enable_shared_from_this<Node>   // enable shared_from_this
   {
-    enum class Type { Input, Table, P } type;
+    enum class Type { Input/* intermediate input of table in tree, used for concat*/, 
+    Table/*table node*/, P/*primary input note, all external nodes should P in the end of cloud creation*/ } type;
 
     // for Input
     size_t inputIndex = (size_t)-1;
@@ -33,10 +34,11 @@ public:
     std::weak_ptr<Node> parent;     
 
     //--- ctors
-    explicit Node(SNLTruthTableTree* t)                   // Type::P
-      : type(Type::P), tree(t) {
-      nodeID = tree->lastID_++;
-    }
+    // explicit Node(SNLTruthTableTree* t, naja::DNL::DNLID i, 
+    //      naja::DNL::DNLID term)                   // Type::P
+    //   : type(Type::P), tree(t), dnlid(i), termid(term) {
+    //   nodeID = tree->lastID_++;
+    // }
 
     explicit Node(size_t idx, SNLTruthTableTree* t)       // Type::Input
       : type(Type::Input), inputIndex(idx), tree(t) {
@@ -45,12 +47,14 @@ public:
 
     Node(SNLTruthTableTree* t, 
          naja::DNL::DNLID i, 
-         naja::DNL::DNLID term)                          // Type::Table
-      : type(Type::Table), tree(t), dnlid(i), termid(term) 
+         naja::DNL::DNLID term, Type type = Type::Table)                          // Type::Table
+      : type(type), tree(t), dnlid(i), termid(term) 
     {
-      assert(i != naja::DNL::DNLID_MAX && term != naja::DNL::DNLID_MAX);
+      //assert(i != naja::DNL::DNLID_MAX && term != naja::DNL::DNLID_MAX);
       nodeID = tree->lastID_++;
     }
+
+    Node(const Node& other) = delete;
 
     // evaluate recursively
     bool eval(const std::vector<bool>& extInputs) const;
@@ -64,8 +68,8 @@ public:
 
   //--- public API
   SNLTruthTableTree();
-  SNLTruthTableTree(Node::Type type);
-  SNLTruthTableTree(naja::DNL::DNLID instid, naja::DNL::DNLID termid);
+  //SNLTruthTableTree(Node::Type type);
+  SNLTruthTableTree(naja::DNL::DNLID instid, naja::DNL::DNLID termid, Node::Type type = Node::Type::Table);
 
   size_t size() const;
   bool eval(const std::vector<bool>& extInputs) const;

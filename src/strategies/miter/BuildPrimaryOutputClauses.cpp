@@ -91,7 +91,7 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectInputs() {
             SNLBitTerm::Direction::Input) {
           auto deps = SNLDesignModeling::getCombinatorialInputs(
               term.getSnlBitTerm());
-          if (deps.empty() || !(term.getSnlBitTerm()->getDesign()->getTruthTable(term.getSnlBitTerm()->getOrderID()).isInitialized())) {
+          if (/*deps.empty() ||*/ !(term.getSnlBitTerm()->getDesign()->getTruthTable(term.getSnlBitTerm()->getOrderID()).isInitialized())) {
             inputs.push_back(termId);
             DEBUG_LOG("Collecting input %s of model %s\n",
                       term.getSnlBitTerm()->getName().getString().c_str(), 
@@ -184,21 +184,75 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectOutputs() {
                 SNLBitTerm::Direction::Input) {
               continue;
             }
-            auto tt = tTerm.getSnlBitTerm()->getDesign()->getTruthTable(tTerm.getSnlBitTerm()->getOrderID());
+            const auto& tt = tTerm.getSnlBitTerm()->getDesign()->getTruthTable(tTerm.getSnlBitTerm()->getOrderID());
             if (tt.isInitialized()) {
               tts.push_back(tt);
+              // print deps
+              for (const auto& d : tt.getDependencies()) {
+                DEBUG_LOG("TT deps: %llu\n",
+                          d);
+              }
             }
           }
-          bool termInTTDeps = false;
-          for (const auto& tt : tts) {
-            auto ttDeps = tt.getDependencies();
-            if (std::find(ttDeps.begin(), ttDeps.end(), term.getSnlBitTerm()->getOrderID()) !=
-                ttDeps.end()) {
-              termInTTDeps = true;
-              break;
-            }
+          bool inTermInTTDeps = false;
+         for (const auto& tt : tts) {
+              const auto& ttDeps = tt.getDependencies();            // expect std::vector<uint64_t>
+              uint64_t orderID = term.getSnlBitTerm()->getOrderID(); // assume 0-based
+
+              // If orderID is 1-based, uncomment:
+              // if (orderID > 0) --orderID;
+
+              for (size_t index = 0; index < ttDeps.size(); ++index) {
+                  uint64_t d = ttDeps[index];
+
+                  uint64_t blockMin = index * 64ULL;                // inclusive
+                  uint64_t blockMax = blockMin + 64ULL;             // exclusive
+
+                  // If orderID is before this block, nothing more to find
+                  if (orderID < blockMin) {
+                      break;
+                  }
+
+                  // Skip if orderID beyond this block
+                  if (orderID >= blockMax) {
+                      continue;
+                  }
+
+                  uint64_t localBit = orderID - blockMin;          // 0..63
+
+                  //std::printf("TT deps: %llu\n", static_cast<unsigned long long>(d));
+                  //std::printf("d = %llu, orderID = %llu, index = %zu, localBit = %llu\n",
+                              // static_cast<unsigned long long>(d),
+                              // static_cast<unsigned long long>(orderID),
+                              // index,
+                              // static_cast<unsigned long long>(localBit));
+
+                  // Defensive: check localBit < 64
+                  if (localBit >= 64) {
+                      //std::fprintf(stderr, "localBit out of range: %llu\n",
+                      //            static_cast<unsigned long long>(localBit));
+                      break;
+                  }
+
+                  // Correct shift using 1ULL and parentheses
+                  uint64_t mask = (1ULL << localBit);
+                  //std::printf("mask = 0x%llx\n", static_cast<unsigned long long>(mask));
+
+                  if ((d & mask) != 0ULL) {
+                      inTermInTTDeps = true;
+                  }
+
+                  // we handled the block which contains orderID; stop scanning ttDeps
+                  break;
+              }
+
+              if (inTermInTTDeps) {
+                  // Found — act and break outer loop if that's desired
+                  //std::puts("Found matching bit in this TT deps");
+                  break;
+              }
           }
-          if (deps.empty() && !termInTTDeps) {
+          if (/*deps.empty() &&*/ !inTermInTTDeps) {
             outputsSet.insert(termId);
             DEBUG_LOG("Collecting output %s of model %s\n",
                       term.getSnlBitTerm()->getName().getString().c_str(), 
@@ -237,6 +291,8 @@ void BuildPrimaryOutputClauses::collect() {
   sortOutputs();
   for (const auto& output : outputs_) {
     outputsMap_[naja::DNL::get()->getDNLTerminalFromID(output).getFullPathIDs()] = output;
+    printf("Output collected: %s\n",
+          naja::DNL::get()->getDNLTerminalFromID(output).getSnlBitTerm()->getName().getString().c_str());
   }
 }
 
@@ -263,7 +319,24 @@ void BuildPrimaryOutputClauses::build() {
                         
                         SNLLogicCloud cloud(out, inputs_, outputs_);
                         cloud.compute();
-
+                        // //cloud.getTruthTable().print();
+                        // std::vector<DNLID> test1;
+                        // std::vector<DNLID> test2;
+                        // for (auto in : cloud.getAllInputs()) {
+                        //   printf("Input in tree cloud: %lu\n", in);
+                        //   // if (in >= cloud.getInputs().size()) {
+                        //   //   printf("size of inputs in cloud: %lu\n", cloud.getInputs().size());
+                        //   //   //assert(false && "Input in cloud is out of range");
+                        //   // }
+                        //  test1.push_back(in);
+                        // }
+                        // for (auto in : cloud.getInputs()) {
+                        //   printf("Input in cloud: %lu\n", in);
+                        //   test2.push_back(in);
+                        // }
+                        // std::sort(test1.begin(), test1.end());
+                        // std::sort(test2.begin(), test2.end());
+                        // assert(test1 == test2);
                         std::vector<std::string> varNames;
                         for (auto input : cloud.getInputs()) {
                           DNLTerminalFull term = get()->getDNLTerminalFromID(input);
@@ -293,6 +366,10 @@ void BuildPrimaryOutputClauses::build() {
                           }
                           // find the index of input in inputs_
                           auto it = std::find(inputs_.begin(), inputs_.end(), input);
+                          // printf("Input: %s\n",
+                          //       get()->getDNLTerminalFromID(input).getSnlBitTerm()->getName().getString().c_str());
+                          // printf("Model: %s\n",
+                          //       get()->getDNLTerminalFromID(input).getSnlBitTerm()->getDesign()->getName().getString().c_str());
                           assert(it != inputs_.end());
                           size_t index = std::distance(inputs_.begin(), it);
                           varNames.push_back(std::to_string(index + 2)); // +2 to avoid 0 and 1 which are reserved for constants
@@ -308,6 +385,7 @@ void BuildPrimaryOutputClauses::build() {
                             cloud.getTruthTable(), varNames);
                         //printf("size of expr: %lu\n", POs_.back()->size());
                       };
+  
   if (getenv("KEPLER_NO_MT")) {
     for (size_t i = 0; i < outputs_.size(); ++i) {
       processOutput(i);
