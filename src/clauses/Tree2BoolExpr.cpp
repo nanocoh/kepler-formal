@@ -72,11 +72,11 @@ Tree2BoolExpr::convert(
     const SNLTruthTableTree&        tree,
     const std::vector<std::string>& varNames)
 {
-    if (varNames.size() != tree.size()) {
-        throw std::invalid_argument{
-            "Tree2BoolExpr: varNames.size() != tree.size()"
-        };
-    }
+    // if (varNames.size() != tree.size()) {
+    //     throw std::invalid_argument{
+    //         "Tree2BoolExpr: varNames.size() != tree.size()"
+    //     };
+    // }
 
     const auto* root = tree.getRoot();
     if (!root) 

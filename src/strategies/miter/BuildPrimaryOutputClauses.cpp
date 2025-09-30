@@ -338,7 +338,7 @@ void BuildPrimaryOutputClauses::build() {
                         // std::sort(test2.begin(), test2.end());
                         // assert(test1 == test2);
                         std::vector<std::string> varNames;
-                        for (auto input : cloud.getInputs()) {
+                        /*for (auto input : cloud.getInputs()) {
                           DNLTerminalFull term = get()->getDNLTerminalFromID(input);
                           if (term.getSnlTerm() != nullptr) {
                             auto net = term.getSnlTerm()->getNet();
@@ -373,16 +373,17 @@ void BuildPrimaryOutputClauses::build() {
                           assert(it != inputs_.end());
                           size_t index = std::distance(inputs_.begin(), it);
                           varNames.push_back(std::to_string(index + 2)); // +2 to avoid 0 and 1 which are reserved for constants
-                        }
+                        }*/
 
                         assert(cloud.getTruthTable().isInitialized());
                         //DEBUG_LOG("Truth Table: %s\n",
                         //          cloud.getTruthTable().print().c_str());
                         /*std::shared_ptr<BoolExpr> expr = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);*/
-                        
+                        //BoolExpr::getMutex().lock();
                         POs_[i] = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);
+                        //BoolExpr::getMutex().unlock();
                         //printf("size of expr: %lu\n", POs_.back()->size());
                       };
   

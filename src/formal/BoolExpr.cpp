@@ -10,6 +10,8 @@ tbb::concurrent_unordered_map<BoolExpr::Key,
                    BoolExpr::KeyEq>
     BoolExpr::table_{};
 
+tbb::mutex BoolExpr::tableMutex_;
+
 /// Private ctor
 BoolExpr::BoolExpr(Op op, size_t id,
                    std::shared_ptr<BoolExpr> l,

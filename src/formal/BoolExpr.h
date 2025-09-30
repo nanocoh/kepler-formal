@@ -8,6 +8,7 @@
 #include <functional>
 #include <mutex>
 #include "tbb/concurrent_unordered_map.h"
+#include <tbb/mutex.h>
 
 namespace KEPLER_FORMAL {
 
@@ -54,6 +55,11 @@ public:
     }
     // default constructor
     BoolExpr() = default;
+
+    static tbb::mutex& getMutex() {
+        return tableMutex_;
+    }
+
 private:
     // Private ctor: use factory methods
     BoolExpr(Op op, size_t id,
@@ -74,19 +80,28 @@ private:
         BoolExpr* r;
     };
 
+    static constexpr uint64_t HASH_SEED = 0x9e3779b97f4a7c15ULL;
+
+    static inline uint64_t splitmix64(uint64_t x) noexcept {
+    x += 0x9e3779b97f4a7c15ULL;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+    return x ^ (x >> 31);
+    }
     struct KeyHash {
-        static inline void hash_combine(std::size_t& seed, std::size_t v) noexcept {
-            seed ^= v + 0x9e3779b97f4a7c15ULL + (seed<<6) + (seed>>2);
-        }
         size_t operator()(Key const& k) const noexcept {
-            size_t seed = std::hash<int>()(int(k.op));
-            hash_combine(seed, std::hash<size_t>()(k.varId));
-            hash_combine(seed, std::hash<const void*>()((const void*)k.l));
-            hash_combine(seed, std::hash<const void*>()((const void*)k.r));
-            return seed;
+            const uint64_t s = HASH_SEED;
+            uint64_t a = splitmix64(uint64_t(std::hash<int>()(int(k.op))) + s);
+            uint64_t b = splitmix64(uint64_t(std::hash<size_t>()(k.varId)) ^ (s<<1));
+            uint64_t c = splitmix64(uint64_t(std::uintptr_t(k.l)) + (s>>1));
+            uint64_t d = splitmix64(uint64_t(std::uintptr_t(k.r)) ^ (s<<2));
+            uint64_t acc = a;
+            acc = splitmix64(acc ^ (b + 0x9e3779b97f4a7c15ULL + (acc<<6) + (acc>>2)));
+            acc ^= (c + 0x9e3779b97f4a7c15ULL + (acc<<6) + (acc>>2));
+            acc = splitmix64(acc ^ d);
+            return static_cast<size_t>(acc);
         }
     };
-
     struct KeyEq {
         bool operator()(Key const& a, Key const& b) const noexcept {
             return a.op    == b.op
@@ -105,6 +120,8 @@ private:
 
     // Interning constructor (caller must lock tableMutex_)
     static std::shared_ptr<BoolExpr> createNode(Key const& k);
+
+    static tbb::mutex tableMutex_;
 };
 
 } // namespace KEPLER_FORMAL
