@@ -78,8 +78,8 @@ public:
               naja::DNL::DNLID instid,
               naja::DNL::DNLID termid);
 
-  void concatFull(const std::vector<std::pair<naja::DNL::DNLID,
-                                             naja::DNL::DNLID>>& tables);
+  void concatFull(const std::vector<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>,
+            tbb::tbb_allocator<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>>>& tables);
 
   const Node* getRoot() const { return root_.get(); }
   bool isInitialized() const;

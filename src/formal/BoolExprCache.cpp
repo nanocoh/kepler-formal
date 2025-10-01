@@ -1,33 +1,49 @@
 #include "BoolExprCache.h"
-#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/tbb_allocator.h>
 #include <memory>
-#include <type_traits>
-#include "BoolExpr.h"
-// for assert
 #include <cassert>
+#include <atomic>
+#include <tuple>
+#include <cstdint>
+#include "BoolExpr.h"
 
 namespace KEPLER_FORMAL {
 
-// ensure Op is hashable
-struct OpHash {
-  size_t operator()(Op op) const noexcept {
-    using UT = std::underlying_type_t<Op>;
-    return std::hash<UT>()(static_cast<UT>(op));
+// atomic id counter
+std::atomic<size_t> BoolExprCache::lastID_{1};
+
+// Tuple key: (op,varId,lid,rid) using pointer identity for children
+using TupleKey = std::tuple<uint32_t, uint64_t, uint64_t, uint64_t>;
+
+// hasher for TupleKey
+struct TupleKeyHasher {
+  size_t operator()(TupleKey const& t) const noexcept {
+    uint64_t a = static_cast<uint64_t>(std::get<0>(t));
+    uint64_t b = std::get<1>(t);
+    uint64_t c = std::get<2>(t);
+    uint64_t d = std::get<3>(t);
+    uint64_t x = a;
+    x = (x * 11400714819323198485ull) ^ (b + 0x9e3779b97f4a7c15ull + (x<<6) + (x>>2));
+    x ^= (c + 0x9e3779b97f4a7c15ull + (x<<6) + (x>>2));
+    x ^= (d + 0x9e3779b97f4a7c15ull + (x<<6) + (x>>2));
+    return static_cast<size_t>(x ^ (x >> 32));
   }
 };
 
-// define NodeID to match BoolExpr::nodeID type (use size_t here; change if
-// different)
-using NodeID = size_t;
+struct TupleKeyEq {
+  bool operator()(TupleKey const& a, TupleKey const& b) const noexcept { return a == b; }
+};
 
-// clearer nested aliases: final value is std::shared_ptr<BoolExpr>
-using Level4 = tbb::concurrent_vector<std::shared_ptr<BoolExpr>>;
-using Level3 = tbb::concurrent_vector<Level4>;
-using Level2 = tbb::concurrent_vector<Level3>;
-using NotTable = tbb::concurrent_vector<Level2>;
+using ValueT = std::shared_ptr<BoolExpr>;
+using PairT = std::pair<const TupleKey, ValueT>;
+using TbbAlloc = tbb::tbb_allocator<PairT>;
+
+// concurrent map using tbb allocator
+using SingleMap = tbb::concurrent_unordered_map<TupleKey, ValueT, TupleKeyHasher, TupleKeyEq, TbbAlloc>;
 
 struct BoolExprCache::Impl {
-  NotTable notTable;
+  SingleMap table;
 };
 
 BoolExprCache::Impl& BoolExprCache::impl() {
@@ -35,63 +51,49 @@ BoolExprCache::Impl& BoolExprCache::impl() {
   return instance;
 }
 
-std::shared_ptr<BoolExpr> BoolExprCache::getExpression(Key const& k) {
-  NodeID lid = k.l ? k.l->getId() : NodeID{0};
-  NodeID rid = k.r ? k.r->getId() : NodeID{0};
-
-  auto& tbl = impl().notTable;
-
-  // 1) find Op
-  if ((size_t)k.op < tbl.size()) {
-    auto& lvl2 = tbl.at((size_t)k.op);  // Level2
-    if ((size_t)k.varId < lvl2.size()) {
-      auto& lvl3 = lvl2.at((size_t)k.varId);  // Level3
-      if ((size_t)lid < lvl3.size()) {
-        auto& lvl4 = lvl3.at((size_t)lid);  // Level4
-        if ((size_t)rid < lvl4.size()) {
-          // it4->second is std::shared_ptr<BoolExpr>
-          if (lvl4.at((size_t)rid).get() == nullptr) {
-            // Replace entry with new node
-            std::shared_ptr<BoolExpr> L =
-                k.l ? k.l->shared_from_this() : nullptr;
-            std::shared_ptr<BoolExpr> R =
-                k.r ? k.r->shared_from_this() : nullptr;
-            lvl4.at((size_t)rid) = std::shared_ptr<BoolExpr>(
-                new BoolExpr(k.op, k.varId, std::move(L), std::move(R)));
-          }
-          assert(lvl4.at((size_t)rid).get() != nullptr);
-          return lvl4.at((size_t)rid);
-        }
-      }
-    }
-  }
-  std::shared_ptr<BoolExpr> L = k.l ? k.l->shared_from_this() : nullptr;
-  std::shared_ptr<BoolExpr> R = k.r ? k.r->shared_from_this() : nullptr;
-  for (size_t i = tbl.size(); i <= static_cast<size_t>(k.op); ++i) {
-    tbl.push_back(Level2());
-  }
-  auto& lvl2 = tbl.at((size_t) k.op);
-  for (size_t i = lvl2.size(); i <= k.varId; ++i) {
-    lvl2.push_back(Level3());
-  }
-  auto& lvl3 = lvl2.at(k.varId);
-  for (size_t i = lvl3.size(); i <= lid; ++i) {
-    lvl3.push_back(Level4());
-  }
-  auto& lvl4 = lvl3.at(lid);
-  for (size_t i = lvl4.size(); i <= rid; ++i) {
-    lvl4.push_back(nullptr);
-  }
-  // not found: create via the declared factory that takes Key
-  // createNode is declared as: static std::shared_ptr<BoolExpr>
-  // createNode(BoolExprCache::Key const& k); ensure BoolExpr grants friendship
-  // to BoolExprCache or createNode is public
-  auto ptr = std::shared_ptr<BoolExpr>(
-      new BoolExpr(k.op, k.varId, std::move(L), std::move(R)));
-
-  // insert into nested maps (operator[] will create missing intermediate maps)
-  impl().notTable.at((size_t)k.op).at(k.varId).at(lid).at(rid) = ptr;
-  return ptr;
+static inline TupleKey make_tuple_key(Op op, size_t varId, BoolExpr* lptr, BoolExpr* rptr) noexcept {
+  // use pointer identity as integer; nullptr -> 0
+  auto lid = reinterpret_cast<uint64_t>(lptr);
+  auto rid = reinterpret_cast<uint64_t>(rptr);
+  return TupleKey{
+    static_cast<uint32_t>(op),
+    static_cast<uint64_t>(varId),
+    lid,
+    rid
+  };
 }
 
-}  // namespace KEPLER_FORMAL
+std::shared_ptr<BoolExpr> BoolExprCache::getExpression(Key const& k) {
+  BoolExpr* lptr = k.l;
+  BoolExpr* rptr = k.r;
+  TupleKey tk = make_tuple_key(k.op, k.varId, lptr, rptr);
+
+  auto &tbl = impl().table;
+
+  // quick lookup
+  auto it = tbl.find(tk);
+  if (it != tbl.end()) {
+    size_t id = lastID_.fetch_add(1, std::memory_order_relaxed) + 1;
+    it->second->setIndex(id);
+    assert(it->second.get() != nullptr);
+    return it->second;
+  }
+
+  // construct new BoolExpr. We need shared_ptr owners for children if they exist.
+  std::shared_ptr<BoolExpr> L = lptr ? lptr->shared_from_this() : nullptr;
+  std::shared_ptr<BoolExpr> R = rptr ? rptr->shared_from_this() : nullptr;
+
+  // use new because constructor may be non-public
+  auto newptr = std::shared_ptr<BoolExpr>(new BoolExpr(k.op, k.varId, std::move(L), std::move(R)));
+
+  // assign id atomically
+  size_t id = lastID_.fetch_add(1, std::memory_order_relaxed) + 1;
+  newptr->setIndex(id);
+
+  // insert; if another thread inserted concurrently, use that one
+  auto pr = tbl.insert({tk, newptr});
+  if (!pr.second) return pr.first->second;
+  return newptr;
+}
+
+} // namespace KEPLER_FORMAL

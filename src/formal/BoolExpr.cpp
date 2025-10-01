@@ -14,7 +14,7 @@ tbb::concurrent_unordered_map<BoolExprCache::Key,
 BoolExpr::BoolExpr(Op op, size_t id,
                    std::shared_ptr<BoolExpr> l,
                    std::shared_ptr<BoolExpr> r)
-  : op_(op), id_(id), left_(std::move(l)), right_(std::move(r))
+  : op_(op), varID_(id), left_(std::move(l)), right_(std::move(r))
 {}
 
 /// Intern+construct a new node if needed
@@ -51,8 +51,8 @@ std::shared_ptr<BoolExpr> BoolExpr::Var(size_t id) {
 
 std::shared_ptr<BoolExpr> BoolExpr::Not(std::shared_ptr<BoolExpr> a) {
     // constant-fold
-    if (a->op_ == Op::VAR && a->id_ < 2)
-        return Var(1 - a->id_);
+    if (a->op_ == Op::VAR && a->varID_ < 2)
+        return Var(1 - a->varID_);
     // double negation
     if (a->op_ == Op::NOT)
         return a->left_;
@@ -65,11 +65,11 @@ std::shared_ptr<BoolExpr> BoolExpr::And(
     std::shared_ptr<BoolExpr> b)
 {
     // constant-fold
-    if ((a->op_ == Op::VAR && a->id_ == 0) ||
-        (b->op_ == Op::VAR && b->id_ == 0))
+    if ((a->op_ == Op::VAR && a->varID_ == 0) ||
+        (b->op_ == Op::VAR && b->varID_ == 0))
         return Var(0);
-    if (a->op_ == Op::VAR && a->id_ == 1) return b;
-    if (b->op_ == Op::VAR && b->id_ == 1) return a;
+    if (a->op_ == Op::VAR && a->varID_ == 1) return b;
+    if (b->op_ == Op::VAR && b->varID_ == 1) return a;
     if (a.get() == b.get())              return a;
     if (a->op_==Op::NOT && a->left_.get()==b.get()) return Var(0);
     if (b->op_==Op::NOT && b->left_.get()==a.get()) return Var(0);
@@ -84,11 +84,11 @@ std::shared_ptr<BoolExpr> BoolExpr::Or(
     std::shared_ptr<BoolExpr> a,
     std::shared_ptr<BoolExpr> b)
 {
-    if ((a->op_ == Op::VAR && a->id_ == 1) ||
-        (b->op_ == Op::VAR && b->id_ == 1))
+    if ((a->op_ == Op::VAR && a->varID_ == 1) ||
+        (b->op_ == Op::VAR && b->varID_ == 1))
         return Var(1);
-    if (a->op_ == Op::VAR && a->id_ == 0) return b;
-    if (b->op_ == Op::VAR && b->id_ == 0) return a;
+    if (a->op_ == Op::VAR && a->varID_ == 0) return b;
+    if (b->op_ == Op::VAR && b->varID_ == 0) return a;
     if (a.get() == b.get())             return a;
     if (a->op_==Op::NOT && a->left_.get()==b.get()) return Var(1);
     if (b->op_==Op::NOT && b->left_.get()==a.get()) return Var(1);
@@ -102,10 +102,10 @@ std::shared_ptr<BoolExpr> BoolExpr::Xor(
     std::shared_ptr<BoolExpr> a,
     std::shared_ptr<BoolExpr> b)
 {
-    if (a->op_ == Op::VAR && a->id_ == 0)     return b;
-    if (b->op_ == Op::VAR && b->id_ == 0)     return a;
-    if (a->op_ == Op::VAR && a->id_ == 1)     return Not(b);
-    if (b->op_ == Op::VAR && b->id_ == 1)     return Not(a);
+    if (a->op_ == Op::VAR && a->varID_ == 0)     return b;
+    if (b->op_ == Op::VAR && b->varID_ == 0)     return a;
+    if (a->op_ == Op::VAR && a->varID_ == 1)     return Not(b);
+    if (b->op_ == Op::VAR && b->varID_ == 1)     return Not(a);
     if (a.get() == b.get())                  return Var(0);
 
     if (b.get() < a.get()) std::swap(a, b);
@@ -118,7 +118,7 @@ std::shared_ptr<BoolExpr> BoolExpr::Xor(
 void BoolExpr::Print(std::ostream& out) const { 
     switch (op_) {
         case Op::VAR:
-            out << id_;
+            out << varID_;
             break;
         case Op::NOT:
             out << "¬";

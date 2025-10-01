@@ -9,10 +9,10 @@
 #include <mutex>
 #include "tbb/concurrent_unordered_map.h"
 #include "BoolExprCache.h"
+#include <cassert>
 
 namespace KEPLER_FORMAL {
 
-enum class Op { VAR, AND, OR, NOT, XOR };
 
 /// A hash-consed Boolean expression DAG with eager constant-folding,
 /// now protected for concurrent calls.
@@ -42,20 +42,22 @@ public:
 
     // Accessors
     Op getOp()    const { return op_; }
-    size_t getId() const { return id_; }
+    size_t getId() const { return varID_; }
     const std::shared_ptr<BoolExpr>& getLeft()  const { return left_; }
     const std::shared_ptr<BoolExpr>& getRight() const { return right_; }
         std::string getName() const {
         if (op_ != Op::VAR)
             throw std::logic_error("getName: not a variable");
-        if (id_ == 0)
+        if (varID_ == 0)
             return "FALSE";
-        if (id_ == 1)
+        if (varID_ == 1)
             return "TRUE";
-        return "x" + std::to_string(id_);
+        return "x" + std::to_string(varID_);
     }
     // default constructor
     BoolExpr() = default;
+    void setIndex(size_t idx) { index_ = idx; }
+    size_t getIndex() const { assert(index_ != (size_t) -1); return index_; }
 private:
     // Private ctor: use factory methods
     BoolExpr(Op op, size_t id,
@@ -63,8 +65,9 @@ private:
              std::shared_ptr<BoolExpr> r);
 
     Op     op_;
-    size_t id_;
+    size_t varID_;
     std::shared_ptr<BoolExpr> left_, right_;
+    size_t index_ = (size_t) -1;
 
     static std::string OpToString(Op);
 

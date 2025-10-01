@@ -2,6 +2,7 @@
 #include "SNLDesignModeling.h"
 #include "SNLTruthTableMerger.h"
 #include <cassert>
+#include <tbb/tbb_allocator.h>
 
 //#define DEBUG_PRINTS
 
@@ -23,7 +24,7 @@ bool SNLLogicCloud::isOutput(naja::DNL::DNLID termID) {
 }
 
 void SNLLogicCloud::compute() {
-  std::vector<naja::DNL::DNLID> newIterationInputs;
+  std::vector<naja::DNL::DNLID, tbb::tbb_allocator<naja::DNL::DNLID>> newIterationInputs;
 
   if (dnl_.getDNLTerminalFromID(seedOutputTerm_).isTopPort() || isOutput(seedOutputTerm_)) {
     auto iso = dnl_.getDNLIsoDB().getIsoFromIsoIDconst(
@@ -113,7 +114,9 @@ void SNLLogicCloud::compute() {
     DEBUG_LOG("table size: %zu, currentIterationInputs_ size: %zu\n", table_.size(), currentIterationInputs_.size());
     assert(currentIterationInputs_.size() == table_.size());
 
-    std::vector<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>> inputsToMerge;
+    std::vector<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>,
+            tbb::tbb_allocator<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>>> inputsToMerge;
+
     for (auto input : currentIterationInputs_) {
       if (isInput(input)/*|| isOutput(input)*/) {
         //SNLTruthTable tt(1, 2); // uncommented

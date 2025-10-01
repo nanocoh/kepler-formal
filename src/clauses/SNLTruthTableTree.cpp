@@ -319,8 +319,8 @@ void SNLTruthTableTree::concat(size_t borderIndex,
 }
 
 void SNLTruthTableTree::concatFull(
-  const std::vector<std::pair<naja::DNL::DNLID,
-                              naja::DNL::DNLID>>& tables)
+  const std::vector<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>,
+            tbb::tbb_allocator<std::pair<naja::DNL::DNLID, naja::DNL::DNLID>>>& tables)
 {
   int newInputs = (int)numExternalInputs_;
   if (tables.size() > borderLeaves_.size())

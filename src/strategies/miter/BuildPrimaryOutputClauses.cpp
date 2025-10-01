@@ -294,6 +294,7 @@ void BuildPrimaryOutputClauses::collect() {
     printf("Output collected: %s\n",
           naja::DNL::get()->getDNLTerminalFromID(output).getSnlBitTerm()->getName().getString().c_str());
   }
+  POs_.resize(outputs_.size());
 }
 
 void BuildPrimaryOutputClauses::build() {
@@ -383,11 +384,11 @@ void BuildPrimaryOutputClauses::build() {
                         /*std::shared_ptr<BoolExpr> expr = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);*/
                         //BoolExpr::getMutex().lock();
-                        if (POs_.size() - 1 < i) {
-                          for (size_t j = POs_.size(); j <= i; ++j) {
-                            POs_.push_back(nullptr);
-                          }
-                        }
+                        // if (POs_.size() - 1 < i) {
+                        //   for (size_t j = POs_.size(); j <= i; ++j) {
+                        //     POs_.push_back(nullptr);
+                        //   }
+                        // }
                         assert(POs_.size()  - 1 >= i);
                         POs_[i] = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);
