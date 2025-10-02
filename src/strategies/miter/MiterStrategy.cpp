@@ -306,12 +306,12 @@ bool MiterStrategy::run() {
   //   assert(outputs0 == outputs1);
   // }
   // print POs0 and POs1 in 2 separate for loops
-  for (size_t i = 0; i < POs0.size(); ++i) {
-    printf("POs0[%zu]: %s\n", i, POs0[i]->toString().c_str());
-  }
-  for (size_t i = 0; i < POs1.size(); ++i) {
-    printf("POs1[%zu]: %s\n", i, POs1[i]->toString().c_str());
-  }
+  // for (size_t i = 0; i < POs0.size(); ++i) {
+  //   printf("POs0[%zu]: %s\n", i, POs0[i]->toString().c_str());
+  // }
+  // for (size_t i = 0; i < POs1.size(); ++i) {
+  //   printf("POs1[%zu]: %s\n", i, POs1[i]->toString().c_str());
+  // }
   
 
   // Check if both sets inputs are the same

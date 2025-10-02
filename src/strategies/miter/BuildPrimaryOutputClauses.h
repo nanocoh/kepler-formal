@@ -30,6 +30,7 @@ class BuildPrimaryOutputClauses {
   std::vector<naja::DNL::DNLID> collectOutputs();
   void setOutputs2OutputsIDs();
   void sortOutputs();
+  void initVarNames();
   
   tbb::concurrent_vector<std::shared_ptr<BoolExpr>> POs_;
   std::vector<naja::DNL::DNLID> inputs_;
@@ -38,6 +39,7 @@ class BuildPrimaryOutputClauses {
   std::map<std::vector<NLID::DesignObjectID>, naja::DNL::DNLID> outputsMap_;
   std::map<naja::DNL::DNLID, std::pair<std::vector<naja::NL::NLID::DesignID>, std::vector<naja::NL::NLID::DesignID>>> inputs2inputsIDs_;
   std::map<naja::DNL::DNLID, std::pair<std::vector<naja::NL::NLID::DesignID>, std::vector<naja::NL::NLID::DesignID>>> outputs2outputsIDs_;
+  std::vector<size_t> termDNLID2varID_; // Only for PIs
 };
 
 }  // namespace KEPLER_FORMAL

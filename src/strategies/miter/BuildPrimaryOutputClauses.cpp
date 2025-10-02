@@ -297,10 +297,20 @@ void BuildPrimaryOutputClauses::collect() {
   POs_.resize(outputs_.size());
 }
 
+void BuildPrimaryOutputClauses::initVarNames() {
+  termDNLID2varID_.resize(naja::DNL::get()->getDNLTerms().size(), (size_t) -1);
+  for (size_t i = 0; i < inputs_.size(); ++i) {
+    termDNLID2varID_[inputs_[i]] = i + 2;  // +2 to avoid 0 and 1 which are reserved for constants
+  }
+}
+
 void BuildPrimaryOutputClauses::build() {
   naja::DNL::get();
   POs_.clear();
   POs_ = tbb::concurrent_vector<std::shared_ptr<BoolExpr>>(outputs_.size());
+  initVarNames();
+  // Init var names(counting on the fact that normalization happened before)
+
   // inputs_ = collectInputs();
   // sortInputs();
   // outputs_ = collectOutputs();
@@ -308,7 +318,7 @@ void BuildPrimaryOutputClauses::build() {
   size_t processedOutputs = 0;
   //tbb::task_arena arena(20);
   // init arena with automatic number of threads
-  tbb::task_arena arena;
+  tbb::task_arena arena(20);
   auto processOutput = [&](size_t i) {
     DNLID out = outputs_[i];
     printf("Procssing output %zu/%zu: %s\n",
@@ -340,7 +350,7 @@ void BuildPrimaryOutputClauses::build() {
                         // std::sort(test1.begin(), test1.end());
                         // std::sort(test2.begin(), test2.end());
                         // assert(test1 == test2);
-                        std::vector<std::string> varNames;
+                        //std::vector<std::string> varNames;
                         /*for (auto input : cloud.getInputs()) {
                           DNLTerminalFull term = get()->getDNLTerminalFromID(input);
                           if (term.getSnlTerm() != nullptr) {
@@ -391,7 +401,7 @@ void BuildPrimaryOutputClauses::build() {
                         // }
                         assert(POs_.size()  - 1 >= i);
                         POs_[i] = Tree2BoolExpr::convert(
-                            cloud.getTruthTable(), varNames);
+                            cloud.getTruthTable(), termDNLID2varID_);
                         //BoolExpr::getMutex().unlock();
                         //printf("size of expr: %lu\n", POs_.back()->size());
                       };
