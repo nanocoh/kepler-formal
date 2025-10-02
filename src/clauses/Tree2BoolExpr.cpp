@@ -14,23 +14,42 @@
 #include <bitset>    // needed for bit-manipulation
 #include <tbb/tbb_allocator.h>
 #include <tbb/enumerable_thread_specific.h>
+#include <tbb/concurrent_vector.h>
 
 using namespace naja::NL;
 using namespace KEPLER_FORMAL;
 
-tbb::enumerable_thread_specific<std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t>> termsETS;
+typedef std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t> TermsPair;
+tbb::enumerable_thread_specific<TermsPair> termsETS;
+tbb::concurrent_vector<TermsPair*> termsETSvector;
+
+void initTermsETS() {
+    if (termsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+        for (size_t i = termsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+            termsETSvector.push_back(nullptr);
+        }
+    }
+    if (termsETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+        termsETSvector[tbb::this_task_arena::current_thread_index()] = &termsETS.local();
+    }
+}
+
+TermsPair& getTErmsETS() {
+    initTermsETS();
+    return *termsETSvector[tbb::this_task_arena::current_thread_index()];
+}
 
 size_t sizeOfTermsETS() {
-    return termsETS.local().second;
+    return getTErmsETS().second;
 }
 
 void clearTermsETS() {
-    termsETS.local().second = 0;
+    getTErmsETS().second = 0;
 }
 
 void pushBackTermsETS(std::shared_ptr<BoolExpr> term) {
-    auto& vec = termsETS.local().first;
-    auto& sz = termsETS.local().second;
+    auto& vec = getTErmsETS().first;
+    auto& sz = getTErmsETS().second;
     if (vec.size() > sz) {
         vec[sz] = term;
         sz++;
@@ -41,29 +60,47 @@ void pushBackTermsETS(std::shared_ptr<BoolExpr> term) {
 }
 
 void reserveTermsETS(size_t n) {
-    if (termsETS.local().first.size() >= n)
+    if (getTErmsETS().first.size() >= n)
         return;
-    termsETS.local().first.reserve(n);
+    getTErmsETS().first.reserve(n);
 }
 
 bool emptyTermsETS() {
-    return termsETS.local().second == 0;
+    return getTErmsETS().second == 0;
 }
 
 // same for std::vector<bool, tbb::tbb_allocator<bool>> 
-tbb::enumerable_thread_specific<std::pair<std::vector<bool, tbb::tbb_allocator<bool>>, size_t>> relevantETS;
+typedef std::pair<std::vector<bool, tbb::tbb_allocator<bool>>, size_t> RelevantPair;
+tbb::enumerable_thread_specific<RelevantPair> relevantETS;
+tbb::concurrent_vector<RelevantPair*> relevantETSvector;
+
+void initRelevantETS() {
+    if (relevantETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+        for (size_t i = relevantETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+            relevantETSvector.push_back(nullptr);
+        }
+    }
+    if (relevantETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+        relevantETSvector[tbb::this_task_arena::current_thread_index()] = &relevantETS.local();
+    }
+}
+
+RelevantPair& getRelevantETS() {
+    initRelevantETS();
+    return *relevantETSvector[tbb::this_task_arena::current_thread_index()];
+}
 
 size_t sizeOfRelevantETS() {
-    return relevantETS.local().second;
+    return getRelevantETS().second;
 }
 
 void clearRelevantETS() {
-    relevantETS.local().second = 0;
+    getRelevantETS().second = 0;
 }
 
 void pushBackRelevantETS(bool b) {
-    auto& vec = relevantETS.local().first;
-    auto& sz = relevantETS.local().second;
+    auto& vec = getRelevantETS().first;
+    auto& sz = getRelevantETS().second;
     if (vec.size() > sz) {
         vec[sz] = b;
         sz++;
@@ -74,22 +111,22 @@ void pushBackRelevantETS(bool b) {
 }
 
 void setRelevantETS(size_t i, bool b) {
-    if (i >= relevantETS.local().second) {
+    if (i >= getRelevantETS().second) {
        assert(false && "setRelevantETS: index out of range");
     }
-    relevantETS.local().first[i] = b;
+    getRelevantETS().first[i] = b;
 }
 
 bool getRelevantETS(size_t i) {
-    if (i >= relevantETS.local().second) {
+    if (i >= getRelevantETS().second) {
         throw std::out_of_range("getRelevantETS: index out of range");
     }
-    return relevantETS.local().first[i];
+    return getRelevantETS().first[i];
 }
 
 void reserveRelevantETSwithFalse(size_t n) {
-    auto& vec = relevantETS.local().first;
-    auto& sz = relevantETS.local().second;
+    auto& vec = getRelevantETS().first;
+    auto& sz = getRelevantETS().second;
     if (vec.size() >= n) {
         vec.assign(n, false);
         sz = n;
@@ -102,19 +139,37 @@ void reserveRelevantETSwithFalse(size_t n) {
 }
 
 // do same for std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>> memo;
-tbb::enumerable_thread_specific<std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t>> memoETS;
+typedef std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t> MemoPair;
+tbb::enumerable_thread_specific<MemoPair> memoETS;
+tbb::concurrent_vector<MemoPair*> memoETSvector;
+
+void initMemoETS() {
+    if (memoETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+        for (size_t i = memoETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+            memoETSvector.push_back(nullptr);
+        }
+    }
+    if (memoETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+        memoETSvector[tbb::this_task_arena::current_thread_index()] = &memoETS.local();
+    }
+}
+
+MemoPair& getMemoETS() {
+    initMemoETS();
+    return *memoETSvector[tbb::this_task_arena::current_thread_index()];
+}
 
 size_t sizeOfMemoETS() {
-    return memoETS.local().second;
+    return getMemoETS().second;
 }
 
 void clearMemoETS() {
-    memoETS.local().second = 0;
+    getMemoETS().second = 0;
 }
 
 void pushBackMemoETS(std::shared_ptr<BoolExpr> expr) {
-    auto& vec = memoETS.local().first;
-    auto& sz = memoETS.local().second;
+    auto& vec = getMemoETS().first;
+    auto& sz = getMemoETS().second;
     if (vec.size() > sz) {
         vec[sz] = expr;
         sz++;
@@ -125,8 +180,8 @@ void pushBackMemoETS(std::shared_ptr<BoolExpr> expr) {
 }
 
 void reserveMemoETS(size_t n) {
-    auto& vec = memoETS.local().first;
-    auto& sz = memoETS.local().second;
+    auto& vec = getMemoETS().first;
+    auto& sz = getMemoETS().second;
     if (vec.size() >= n) {
         sz = n;
         vec.assign(n, nullptr);
@@ -138,33 +193,51 @@ void reserveMemoETS(size_t n) {
 }
 
 void setMemoETS(size_t i, std::shared_ptr<BoolExpr> expr) {
-    if (i >= memoETS.local().second) {
+    if (i >= getMemoETS().second) {
        assert(false && "setMemoETS: index out of range");
     }
-    memoETS.local().first[i] = expr;
+    getMemoETS().first[i] = expr;
 }
 
-std::shared_ptr<BoolExpr> getMemoETS(size_t i) {
-    if (i >= memoETS.local().second) {
+const std::shared_ptr<BoolExpr>& getMemoETS(size_t i) {
+    if (i >= getMemoETS().second) {
         assert(false && "getMemoETS: index out of range");
     }
-    return memoETS.local().first[i];
+    return getMemoETS().first[i];
 }
 
 // same for std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>> childF;
-tbb::enumerable_thread_specific<std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t>> childFETS;
+typedef std::pair<std::vector<std::shared_ptr<BoolExpr>, tbb::tbb_allocator<std::shared_ptr<BoolExpr>>>, size_t> ChildFETSPair;
+tbb::enumerable_thread_specific<ChildFETSPair> childFETS;
+tbb::concurrent_vector<ChildFETSPair*> childFETSvector;
+
+void initChildFETS() {
+    if (childFETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+        for (size_t i = childFETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+            childFETSvector.push_back(nullptr);
+        }
+    }
+    if (childFETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+        childFETSvector[tbb::this_task_arena::current_thread_index()] = &childFETS.local();
+    }
+}
+
+ChildFETSPair& getChildFETS() {
+    initChildFETS();
+    return *childFETSvector[tbb::this_task_arena::current_thread_index()];
+}
 
 size_t sizeOfChildFETS() {
-    return childFETS.local().second;
+    return getChildFETS().second;
 }
 
 void clearChildFETS() {
-    childFETS.local().second = 0;
+    getChildFETS().second = 0;
 }
 
 void pushBackChildFETS(std::shared_ptr<BoolExpr> expr) {
-    auto& vec = childFETS.local().first;
-    auto& sz = childFETS.local().second;
+    auto& vec = getChildFETS().first;
+    auto& sz = getChildFETS().second;
     if (vec.size() > sz) {
         vec[sz] = expr;
         sz++;
@@ -175,8 +248,8 @@ void pushBackChildFETS(std::shared_ptr<BoolExpr> expr) {
 }
 
 void reserveChildFETS(size_t n) {
-    auto& vec = childFETS.local().first;
-    auto& sz = childFETS.local().second;
+    auto& vec = getChildFETS().first;
+    auto& sz = getChildFETS().second;
     if (vec.size() >= n) {
         sz = n;
         vec.assign(n, nullptr);
@@ -187,18 +260,18 @@ void reserveChildFETS(size_t n) {
     vec.assign(n, nullptr);
 }
 
-std::shared_ptr<BoolExpr> getChildFETS(size_t i) {
-    if (i >= childFETS.local().second) {
+const std::shared_ptr<BoolExpr>& getChildFETS(size_t i) {
+    if (i >= getChildFETS().second) {
         assert(false && "getChildFETS: index out of range");
     }
-    return childFETS.local().first[i];
+    return getChildFETS().first[i];
 }
 
 void setChildFETS(size_t i, std::shared_ptr<BoolExpr> expr) {
-    if (i >= childFETS.local().second) {
+    if (i >= getChildFETS().second) {
        assert(false && "setChildFETS: index out of range");
     }
-    childFETS.local().first[i] = expr;
+    getChildFETS().first[i] = expr;
 }
 
 
@@ -416,11 +489,11 @@ Tree2BoolExpr::convert(
                     }
                     else {
                         // fold into OR
-                        std::shared_ptr<BoolExpr> expr = termsETS.local().first[0];
+                        std::shared_ptr<BoolExpr> expr = getTErmsETS().first[0];
                         //for (size_t t = 1; t < terms.size(); ++t)
                         //    expr = BoolExpr::Or(expr, terms[t]);
                         for (size_t t = 1; t < sizeOfTermsETS(); ++t) {
-                            expr = BoolExpr::Or(expr, termsETS.local().first[t]);
+                            expr = BoolExpr::Or(expr, getTErmsETS().first[t]);
                         }
                         //memo[id] = expr;
                         setMemoETS(id, expr);

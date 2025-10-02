@@ -4,17 +4,55 @@
 #include <cassert>
 #include <tbb/tbb_allocator.h>
 #include "tbb/enumerable_thread_specific.h"
+#include "tbb/concurrent_vector.h"
 
-tbb::enumerable_thread_specific< std::pair<std::vector<naja::DNL::DNLID, tbb::tbb_allocator<naja::DNL::DNLID>>,size_t> > currentIterationInputsETS;
-tbb::enumerable_thread_specific< std::pair<std::vector<naja::DNL::DNLID, tbb::tbb_allocator<naja::DNL::DNLID>>,size_t> > newIterationInputsETS;
+typedef std::pair<std::vector<naja::DNL::DNLID, tbb::tbb_allocator<naja::DNL::DNLID>>, size_t> IterationInputsETSPair;
+tbb::enumerable_thread_specific< IterationInputsETSPair> currentIterationInputsETS;
+tbb::enumerable_thread_specific< IterationInputsETSPair> newIterationInputsETS;
+
+tbb::concurrent_vector<IterationInputsETSPair*> currentIterationInputsETSvector;
+
+tbb::concurrent_vector<IterationInputsETSPair*> newIterationInputsETSvector;
+
+void initCurrentIterationInputsETS() {
+  if (currentIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+    for (size_t i = currentIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+      currentIterationInputsETSvector.push_back(nullptr);
+    }
+  }
+  if (currentIterationInputsETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+    currentIterationInputsETSvector[tbb::this_task_arena::current_thread_index()] = &currentIterationInputsETS.local();
+  }
+}
+
+IterationInputsETSPair& getCurrentIterationInputsETS() {
+  initCurrentIterationInputsETS();
+  return *currentIterationInputsETSvector[tbb::this_task_arena::current_thread_index()];
+}
+
+void initNewIterationInputsETS() {
+  if (newIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
+    for (size_t i = newIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+      newIterationInputsETSvector.push_back(nullptr);
+    }
+  }
+  if (newIterationInputsETSvector[tbb::this_task_arena::current_thread_index()] == nullptr) {
+    newIterationInputsETSvector[tbb::this_task_arena::current_thread_index()] = &newIterationInputsETS.local();
+  }
+}
+
+IterationInputsETSPair& getNewIterationInputsETS() {
+  initNewIterationInputsETS();
+  return *newIterationInputsETSvector[tbb::this_task_arena::current_thread_index()];
+}
 
 void clearCurrentIterationInputsETS() {
-  currentIterationInputsETS.local().second = 0;
+  getCurrentIterationInputsETS().second = 0;
 }
 
 void pushBackCurrentIterationInputsETS(naja::DNL::DNLID input) {
-  auto & vec = currentIterationInputsETS.local().first;
-  auto & sz = currentIterationInputsETS.local().second;
+  auto & vec = getCurrentIterationInputsETS().first;
+  auto & sz = getCurrentIterationInputsETS().second;
   if (vec.size() > sz) {
     vec[sz] = input;
     sz++;
@@ -25,28 +63,24 @@ void pushBackCurrentIterationInputsETS(naja::DNL::DNLID input) {
 }
 
 size_t sizeOfCurrentIterationInputsETS() {
-  return currentIterationInputsETS.local().second;
+  return getCurrentIterationInputsETS().second;
 }
 
 std::vector<naja::DNL::DNLID> copyCurrentIterationInputsETS() {
   std::vector<naja::DNL::DNLID> res;
-  for (size_t i = 0; i < currentIterationInputsETS.local().second; i++) {
-    res.push_back(currentIterationInputsETS.local().first[i]);
+  for (size_t i = 0; i < getCurrentIterationInputsETS().second; i++) {
+    res.push_back(getCurrentIterationInputsETS().first[i]);
   }
   return res;
 }
 
 void clearNewIterationInputsETS() {
-  newIterationInputsETS.local().second = 0;
-}
-
-void initNewIterationInputsETS() {
-  newIterationInputsETS.local().second = 0;
+  getNewIterationInputsETS().second = 0;
 }
 
 void pushBackNewIterationInputsETS(naja::DNL::DNLID input) {
-  auto & vec = newIterationInputsETS.local().first;
-  auto & sz = newIterationInputsETS.local().second;
+  auto & vec = getNewIterationInputsETS().first;
+  auto & sz = getNewIterationInputsETS().second;
   if (vec.size() > sz) {
     vec[sz] = input;
     sz++;
@@ -57,23 +91,19 @@ void pushBackNewIterationInputsETS(naja::DNL::DNLID input) {
 }
 
 bool emptyNewIterationInputsETS() {
-  return newIterationInputsETS.local().second == 0;
+  return getNewIterationInputsETS().second == 0;
 }
 
 size_t sizeOfNewIterationInputsETS() {
-  return newIterationInputsETS.local().second;
+  return getNewIterationInputsETS().second;
 }
 
 void copyNewIterationInputsETStoCurrent() {
   clearCurrentIterationInputsETS();
-  for (size_t i = 0; i < newIterationInputsETS.local().second; i++) {
-    pushBackCurrentIterationInputsETS(newIterationInputsETS.local().first[i]);
+  for (size_t i = 0; i < getNewIterationInputsETS().second; i++) {
+    pushBackCurrentIterationInputsETS(getNewIterationInputsETS().first[i]);
   }
   assert(sizeOfCurrentIterationInputsETS() == sizeOfNewIterationInputsETS());
-}
-
-void initCurrentIterationInputsETS() {
-  currentIterationInputsETS.local().second = 0;
 }
 
 //#define DEBUG_PRINTS
@@ -167,7 +197,7 @@ void SNLLogicCloud::compute() {
   // }
   size_t size = sizeOfNewIterationInputsETS();
   for (size_t i = 0; i < size; i++) {
-    if (!isInput(newIterationInputsETS.local().first[i])/* && !isOutput(newIterationInputsETS.local().first[i])*/) {
+    if (!isInput(getNewIterationInputsETS().first[i])/* && !isOutput(getNewIterationInputsETS().first[i])*/) {
       reachedPIs = false;
       break;
     }
@@ -214,7 +244,7 @@ void SNLLogicCloud::compute() {
     //for (auto input : currentIterationInputs_) {
     size_t sizeOfCurrentInputs = sizeOfCurrentIterationInputsETS();
     for (size_t i = 0; i < sizeOfCurrentInputs; i++) {
-      auto input = currentIterationInputsETS.local().first[i];
+      auto input = getCurrentIterationInputsETS().first[i];
       if (isInput(input)/*|| isOutput(input)*/) {
         //SNLTruthTable tt(1, 2); // uncommented
         //newIterationInputs.push_back(input);
@@ -306,7 +336,7 @@ void SNLLogicCloud::compute() {
     // }
     size_t sizeOfNewInputs = sizeOfNewIterationInputsETS();
     for (size_t i = 0; i < sizeOfNewInputs; i++) {
-      if (!isInput(newIterationInputsETS.local().first[i])) {
+      if (!isInput(getNewIterationInputsETS().first[i])) {
         reachedPIs = false;
         break;
       }

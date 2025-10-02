@@ -141,7 +141,7 @@ bool SNLTruthTableTree::eval(
 void SNLTruthTableTree::updateBorderLeaves() {
   borderLeaves_.clear();
   struct Frame { Node* parent; size_t childPos; Node* node; };
-  std::vector<Frame> stk;
+  std::vector<Frame, tbb::tbb_allocator<Frame>> stk;
   stk.reserve(64);
   stk.push_back({nullptr,0,root_.get()});
 
@@ -325,7 +325,7 @@ void SNLTruthTableTree::concatFull(
   int newInputs = (int)numExternalInputs_;
   if (tables.size() > borderLeaves_.size())
     throw std::invalid_argument("too many tables in concatFull");
-  std::vector<BorderLeaf> newBorderLeaves;
+  std::vector<BorderLeaf, tbb::tbb_allocator<BorderLeaf>> newBorderLeaves;
   size_t index = 0;
   for (size_t i=0; i<tables.size();++i) {
     // get border leaf for i 
@@ -357,7 +357,7 @@ void SNLTruthTableTree::concatFull(
 bool SNLTruthTableTree::isInitialized() const {
   if (!root_) return false;
   struct Frame{Node* n;};
-  std::vector<Frame> stk{{root_.get()}};
+  std::vector<Frame, tbb::tbb_allocator<Frame>> stk{{root_.get()}};
   while(!stk.empty()) {
     auto f = stk.back(); stk.pop_back();
     if (f.n->type == Node::Type::Table) {
@@ -372,7 +372,7 @@ bool SNLTruthTableTree::isInitialized() const {
 void SNLTruthTableTree::print() const {
   if (!root_) return;
   struct Frame{Node* n; size_t d;};
-  std::vector<Frame> stk{{root_.get(), 0}};
+  std::vector<Frame, tbb::tbb_allocator<Frame>> stk{{root_.get(), 0}};
   while(!stk.empty()) {
     auto [n,d] = stk.back(); stk.pop_back();
     // print node content
