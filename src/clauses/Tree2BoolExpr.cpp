@@ -48,8 +48,9 @@ void clearTermsETS() {
 }
 
 void pushBackTermsETS(BoolExpr* term) {
-    auto& vec = getTErmsETS().first;
-    auto& sz = getTErmsETS().second;
+    auto& termsLocal = getTErmsETS(); 
+    auto& vec = termsLocal.first;
+    auto& sz = termsLocal.second;
     if (vec.size() > sz) {
         vec[sz] = term;
         sz++;
@@ -60,9 +61,10 @@ void pushBackTermsETS(BoolExpr* term) {
 }
 
 void reserveTermsETS(size_t n) {
-    if (getTErmsETS().first.size() >= n)
+    auto& termsLocal = getTErmsETS(); 
+    if (termsLocal.first.size() >= n)
         return;
-    getTErmsETS().first.reserve(n);
+    termsLocal.first.reserve(n);
 }
 
 bool emptyTermsETS() {
@@ -99,8 +101,9 @@ void clearRelevantETS() {
 }
 
 void pushBackRelevantETS(bool b) {
-    auto& vec = getRelevantETS().first;
-    auto& sz = getRelevantETS().second;
+    auto& relevantLocal = getRelevantETS();
+    auto& vec = relevantLocal.first;
+    auto& sz = relevantLocal.second;
     if (vec.size() > sz) {
         vec[sz] = b;
         sz++;
@@ -111,22 +114,25 @@ void pushBackRelevantETS(bool b) {
 }
 
 void setRelevantETS(size_t i, bool b) {
-    if (i >= getRelevantETS().second) {
+    auto& relevantLocal = getRelevantETS();
+    if (i >= relevantLocal.second) {
        assert(false && "setRelevantETS: index out of range");
     }
-    getRelevantETS().first[i] = b;
+    relevantLocal.first[i] = b;
 }
 
 bool getRelevantETS(size_t i) {
-    if (i >= getRelevantETS().second) {
+    auto& relevantLocal = getRelevantETS();
+    if (i >= relevantLocal.second) {
         throw std::out_of_range("getRelevantETS: index out of range");
     }
-    return getRelevantETS().first[i];
+    return relevantLocal.first[i];
 }
 
 void reserveRelevantETSwithFalse(size_t n) {
-    auto& vec = getRelevantETS().first;
-    auto& sz = getRelevantETS().second;
+    auto& relevantLocal = getRelevantETS();
+    auto& vec = relevantLocal.first;
+    auto& sz = relevantLocal.second;
     if (vec.size() >= n) {
         vec.assign(n, false);
         sz = n;
@@ -168,8 +174,9 @@ void clearMemoETS() {
 }
 
 void pushBackMemoETS(BoolExpr* expr) {
-    auto& vec = getMemoETS().first;
-    auto& sz = getMemoETS().second;
+    auto& memoLocal = getMemoETS();
+    auto& vec = memoLocal.first;
+    auto& sz = memoLocal.second;
     if (vec.size() > sz) {
         vec[sz] = expr;
         sz++;
@@ -180,8 +187,9 @@ void pushBackMemoETS(BoolExpr* expr) {
 }
 
 void reserveMemoETS(size_t n) {
-    auto& vec = getMemoETS().first;
-    auto& sz = getMemoETS().second;
+    auto& memoLocal = getMemoETS();
+    auto& vec = memoLocal.first;
+    auto& sz = memoLocal.second;
     if (vec.size() >= n) {
         sz = n;
         vec.assign(n, nullptr);
@@ -193,17 +201,19 @@ void reserveMemoETS(size_t n) {
 }
 
 void setMemoETS(size_t i, BoolExpr* expr) {
-    if (i >= getMemoETS().second) {
+    auto& memoLocal = getMemoETS();
+    if (i >= memoLocal.second) {
        assert(false && "setMemoETS: index out of range");
     }
-    getMemoETS().first[i] = expr;
+    memoLocal.first[i] = expr;
 }
 
 BoolExpr* getMemoETS(size_t i) {
-    if (i >= getMemoETS().second) {
+    auto& memoLocal = getMemoETS();
+    if (i >= memoLocal.second) {
         assert(false && "getMemoETS: index out of range");
     }
-    return getMemoETS().first[i];
+    return memoLocal.first[i];
 }
 
 // same for std::vector<BoolExpr*, tbb::tbb_allocator<BoolExpr*>> childF;
@@ -236,8 +246,9 @@ void clearChildFETS() {
 }
 
 void pushBackChildFETS(BoolExpr* expr) {
-    auto& vec = getChildFETS().first;
-    auto& sz = getChildFETS().second;
+    auto& childLocal = getChildFETS();
+    auto& vec = childLocal.first;
+    auto& sz = childLocal.second;
     if (vec.size() > sz) {
         vec[sz] = expr;
         sz++;
@@ -248,8 +259,9 @@ void pushBackChildFETS(BoolExpr* expr) {
 }
 
 void reserveChildFETS(size_t n) {
-    auto& vec = getChildFETS().first;
-    auto& sz = getChildFETS().second;
+    auto& childLocal = getChildFETS();
+    auto& vec = childLocal.first;
+    auto& sz = childLocal.second;
     if (vec.size() >= n) {
         sz = n;
         vec.assign(n, nullptr);
@@ -261,17 +273,19 @@ void reserveChildFETS(size_t n) {
 }
 
 BoolExpr* getChildFETS(size_t i) {
-    if (i >= getChildFETS().second) {
+    auto& childLocal = getChildFETS();
+    if (i >= childLocal.second) {
         assert(false && "getChildFETS: index out of range");
     }
-    return getChildFETS().first[i];
+    return childLocal.first[i];
 }
 
 void setChildFETS(size_t i, BoolExpr* expr) {
-    if (i >= getChildFETS().second) {
+    auto& childLocal = getChildFETS();
+    if (i >= childLocal.second) {
        assert(false && "setChildFETS: index out of range");
     }
-    getChildFETS().first[i] = expr;
+    childLocal.first[i] = expr;
 }
 
 
