@@ -307,7 +307,7 @@ void BuildPrimaryOutputClauses::initVarNames() {
 void BuildPrimaryOutputClauses::build() {
   naja::DNL::get();
   POs_.clear();
-  POs_ = tbb::concurrent_vector<std::shared_ptr<BoolExpr>>(outputs_.size());
+  POs_ = tbb::concurrent_vector<BoolExpr*>(outputs_.size());
   initVarNames();
   // Init var names(counting on the fact that normalization happened before)
 
@@ -391,7 +391,7 @@ void BuildPrimaryOutputClauses::build() {
                         assert(cloud.getTruthTable().isInitialized());
                         //DEBUG_LOG("Truth Table: %s\n",
                         //          cloud.getTruthTable().print().c_str());
-                        /*std::shared_ptr<BoolExpr> expr = Tree2BoolExpr::convert(
+                        /*BoolExpr* expr = Tree2BoolExpr::convert(
                             cloud.getTruthTable(), varNames);*/
                         //BoolExpr::getMutex().lock();
                         // if (POs_.size() - 1 < i) {

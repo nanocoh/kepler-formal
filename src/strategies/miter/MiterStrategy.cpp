@@ -51,7 +51,7 @@ void executeCommand(const std::string& command) {
 
 Glucose::Lit tseitinEncode(
     Glucose::SimpSolver& S,
-    const std::shared_ptr<BoolExpr>& root,
+    BoolExpr* root,
     std::unordered_map<const BoolExpr*, int>& node2var,
     std::unordered_map<std::string, int>& varName2idx)
 {
@@ -72,7 +72,7 @@ Glucose::Lit tseitinEncode(
     };
 
     struct Frame {
-        std::shared_ptr<BoolExpr> expr;
+        BoolExpr* expr;
         bool visited = false;
         Glucose::Lit leftLit, rightLit;
     };
@@ -83,7 +83,7 @@ Glucose::Lit tseitinEncode(
 
     while (!stk.empty()) {
         Frame& fr = stk.top();
-        BoolExpr* e = fr.expr.get();
+        BoolExpr* e = fr.expr;
 
         // If already encoded, reuse
         if (node2var.count(e)) {
@@ -119,8 +119,8 @@ Glucose::Lit tseitinEncode(
         }
 
         // Children have been processed; retrieve their lits
-        if (e->getLeft())  fr.leftLit  = result[e->getLeft().get()];
-        if (e->getRight()) fr.rightLit = result[e->getRight().get()];
+        if (e->getLeft())  fr.leftLit  = result[e->getLeft()];
+        if (e->getRight()) fr.rightLit = result[e->getRight()];
 
         // Create fresh var for this gate
         int v = S.newVar();
@@ -158,7 +158,7 @@ Glucose::Lit tseitinEncode(
         stk.pop();
     }
 
-    return result.at(root.get());
+    return result.at(root);
 }
 
 }  // namespace
@@ -371,9 +371,9 @@ bool MiterStrategy::run() {
   if (sat) {
     printf("Miter failed: analyzing individual POs\n");
     for (size_t i = 0; i < POs0.size(); ++i) {
-      tbb::concurrent_vector<std::shared_ptr<BoolExpr>> singlePOs0S;
+      tbb::concurrent_vector<BoolExpr*> singlePOs0S;
       singlePOs0S.push_back(POs0[i]);
-      tbb::concurrent_vector<std::shared_ptr<BoolExpr>> singlePOs1S;
+      tbb::concurrent_vector<BoolExpr*> singlePOs1S;
       singlePOs1S.push_back(POs1[i]);
       auto singleMiter = buildMiter(singlePOs0S, singlePOs1S);
       
@@ -439,9 +439,9 @@ bool MiterStrategy::run() {
   return !sat;
 }
 
-std::shared_ptr<BoolExpr> MiterStrategy::buildMiter(
-    const tbb::concurrent_vector<std::shared_ptr<BoolExpr>>& A,
-    const tbb::concurrent_vector<std::shared_ptr<BoolExpr>>& B) const {
+BoolExpr* MiterStrategy::buildMiter(
+    const tbb::concurrent_vector<BoolExpr*>& A,
+    const tbb::concurrent_vector<BoolExpr*>& B) const {
   // if (A.size() != B.size()) {
   //   printf("Miter inputs must match in length: %zu vs %zu\n", A.size(),
   //          B.size());
