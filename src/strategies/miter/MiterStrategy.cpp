@@ -391,13 +391,13 @@ bool MiterStrategy::run() {
       singleSolver.addClause(singleRootLit);
       if (singleSolver.solve()) {
         // print singleMitter
-        printf("------ PO failed for %zu mitter: %s\n", i,
-             singleMiter->toString().c_str());
+        // printf("------ PO failed for %zu mitter: %s\n", i,
+        //      singleMiter->toString().c_str());
 
 
-        printf("------ PO failed for %zu: %s vs %s\n", i,
-             singlePOs0S[0]->toString().c_str(),
-             singlePOs1S[0]->toString().c_str());
+        // printf("------ PO failed for %zu: %s vs %s\n", i,
+        //      singlePOs0S[0]->toString().c_str(),
+        //      singlePOs1S[0]->toString().c_str());
         failedPOs_.push_back(outputs0[i]);
         // If UNSAT, print the single miter
         printf("Check failed for PO: %zu\n", i);
@@ -420,13 +420,13 @@ bool MiterStrategy::run() {
           for (const auto& equi : cone.getEquipotentials()) {
             printf("Equipotential: %s\n", equi.getString().c_str());
           }
-          snl2.process();
-          snl2.getNetlistGraph().dumpDotFile(dotFileNameEquis.c_str());
-           executeCommand(std::string(std::string("dot -Tsvg ") +
-                                      dotFileNameEquis + std::string(" -o ") +
-                                      svgFileNameEquis)
-                              .c_str());
-          printf("svg file name: %s\n", svgFileNameEquis.c_str());
+          //snl2.process();
+          //snl2.getNetlistGraph().dumpDotFile(dotFileNameEquis.c_str());
+          //  executeCommand(std::string(std::string("dot -Tsvg ") +
+          //                             dotFileNameEquis + std::string(" -o ") +
+          //                             svgFileNameEquis)
+          //                     .c_str());
+          //printf("svg file name: %s\n", svgFileNameEquis.c_str());
         }
       }
     }
