@@ -97,6 +97,13 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectInputs() {
                       term.getSnlBitTerm()->getName().getString().c_str(), 
                       term.getSnlBitTerm()->getDesign()->getName().getString().c_str());
           }
+          if (term.getSnlBitTerm()->getDesign()->getTruthTable(term.getSnlBitTerm()->getOrderID()).all0()
+          ||  term.getSnlBitTerm()->getDesign()->getTruthTable(term.getSnlBitTerm()->getOrderID()).all1()) {
+              inputs.push_back(termId);
+              DEBUG_LOG("Collecting constant input %s of model %s\n",
+                        term.getSnlBitTerm()->getName().getString().c_str(), 
+                        term.getSnlBitTerm()->getDesign()->getName().getString().c_str());
+          }
         }
       }
       continue;

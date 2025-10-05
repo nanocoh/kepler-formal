@@ -24,13 +24,17 @@ netlist.load_liberty(liberty_files)
 top = netlist.load_verilog('tinyrocket.v')
 
 child_instance = None
+childI = 0
 for child in top.get_child_instances():
     num_children = 0
     for _ in child.get_child_instances():
         num_children += 1
-    if num_children > 0:
+        break
+    if num_children > 0 and childI > 2333:
+        print(childI)
         child_instance = child
         break
+    childI += 1
 u = naja.NLUniverse.get()
 db = u.getTopDesign().getDB()
 prims = list(db.getPrimitiveLibraries())
@@ -46,10 +50,10 @@ for term in inst.get_output_bit_terms():
 net = None
 index = 0
 for input in child_instance.get_input_bit_terms():
-    if index == 2:
+    if index == 1:
         net = input.get_lower_net()
         input.disconnect_lower_net()
-        print(input)
+        print("input: ", input)
         break
     index += 1
 
