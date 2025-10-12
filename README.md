@@ -7,7 +7,7 @@ git clone --recurse-submodules https://github.com/keplertech/kepler-formal.git
 cd kepler-formal
 mkdir build
 cd build
-cmake ...
+cmake ..
 make
 ```
 
