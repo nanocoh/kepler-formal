@@ -5,34 +5,54 @@ on:
   push:
   pull_request:
 
+name: asan-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Debug
+
 jobs:
-  build-and-run:
-    runs-on: ubuntu-latest
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: ubuntu-22.04
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    # install dependencies
+    - name: Install GoogleTest
+      run: sudo apt-get update && sudo apt-get install -y libgtest-dev cmake
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: Install boost & capnproto
+      run: sudo apt-get update && sudo apt-get install -yq libboost-dev libfl-dev capnproto libcapnp-dev ninja-build clang libtbb-dev
+      
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -GNinja -DCMAKE_C_COMPILER=clang -DENABLE_SANITIZERS=ON -DPYTHON_INTERFACE=OFF -DCMAKE_CXX_STANDARD=20
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      env:
+        PYTHONMALLOC: malloc
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: ctest -VV -E ".*[p|P]ython.*" -C ${{env.BUILD_TYPE}}
 
-      - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build repository
-        run: cmake --build build --config Release -- -j$(nproc)
-
-      - name: Verify kepler-formal binary exists
-        run: |
-          if [ ! -x build/src/bin/kepler-formal ]; then
-            echo "ERROR: build/src/bin/kepler-formal not found or not executable"
-            ls -R build || true
-            exit 1
-          fi
-          echo "Found build/src/bin/kepler-formal"
-
-      - name: Run regress test with example files
+    - name: Run regress test with example files
         run: |
           mkdir -p regress-output
           # Run kepler-formal on the example files (files are in example/)
@@ -45,7 +65,7 @@ jobs:
             > regress-output/run.log 2>&1 || (cat regress-output/run.log && exit 1)
           echo "Run completed; logs at regress-output/run.log"
 
-      - name: Upload regress logs
+    - name: Upload regress logs
         uses: actions/upload-artifact@v4
         with:
           name: regress-logs
