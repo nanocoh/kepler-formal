@@ -1,9 +1,8 @@
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
+
 #include <gtest/gtest.h>
 #include <string>
-// SPDX-FileCopyrightText: 2024 The Naja authors
-// <https://github.com/najaeda/naja/blob/main/AUTHORS>
-//
-// SPDX-License-Identifier: Apache-2.0
 
 #include "gtest/gtest.h"
 

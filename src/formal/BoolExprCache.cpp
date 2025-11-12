@@ -1,3 +1,6 @@
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
+
 #include "BoolExprCache.h"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/tbb_allocator.h>

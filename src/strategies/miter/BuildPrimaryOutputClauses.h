@@ -1,3 +1,6 @@
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
+
 #include <tbb/concurrent_vector.h>
 #include <vector>
 #include "BoolExpr.h"

@@ -1,7 +1,5 @@
-// SNLTruthTableTreeTests.cpp
-//
-// Revised to avoid reliance on SNLTruthTableTree::Node internals (addChild / children)
-// and to fix a GTEST_SKIP() / AssertionResult mismatch by using a void helper.
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
 
 #include "SNLTruthTableTree.h"
 #include "SNLTruthTable.h"

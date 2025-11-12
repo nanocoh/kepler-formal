@@ -1,4 +1,5 @@
-// File: src/apps/naja_edit/NajaEdit.cpp
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
 
 #include <chrono>
 #include <cstdlib>

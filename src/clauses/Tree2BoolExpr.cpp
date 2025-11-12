@@ -1,4 +1,5 @@
-// Tree2BoolExpr.cpp
+// Copyright 2024-2025 keplertech.io
+// SPDX-License-Identifier: GPL-2.0
 
 #include "Tree2BoolExpr.h"
 #include "BoolExpr.h"
