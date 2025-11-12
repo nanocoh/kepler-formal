@@ -300,22 +300,22 @@ void SNLLogicCloud::compute() {
       auto inst = dnl_.getDNLInstanceFromID(
           dnl_.getDNLTerminalFromID(driver).getDNLInstance().getID());
       auto* model = const_cast<SNLDesign*>(inst.getSNLModel());
-      if (!model
-               ->getTruthTable(dnl_.getDNLTerminalFromID(driver)
-                                   .getSnlBitTerm()
-                                   ->getOrderID())
-               .isInitialized()) {
-        DEBUG_LOG(
-            "#####Truth table for instance %s is not initialized\n",
-            inst.getSNLInstance()->getModel()->getName().getString().c_str());
-        auto* model = const_cast<SNLDesign*>(inst.getSNLModel());
-        assert(model
-                   ->getTruthTable(dnl_.getDNLTerminalFromID(driver)
-                                       .getSnlBitTerm()
-                                       ->getOrderID())
-                   .isInitialized() &&
-               "Truth table for instance is not initialized");
-      }
+      // if (!model
+      //          ->getTruthTable(dnl_.getDNLTerminalFromID(driver)
+      //                              .getSnlBitTerm()
+      //                              ->getOrderID())
+      //          .isInitialized()) {
+      //   DEBUG_LOG(
+      //       "#####Truth table for instance %s is not initialized\n",
+      //       inst.getSNLInstance()->getModel()->getName().getString().c_str());
+      //   auto* model = const_cast<SNLDesign*>(inst.getSNLModel());
+      //   assert(model
+      //              ->getTruthTable(dnl_.getDNLTerminalFromID(driver)
+      //                                  .getSnlBitTerm()
+      //                                  ->getOrderID())
+      //              .isInitialized() &&
+      //          "Truth table for instance is not initialized");
+      // }
 
       DEBUG_LOG("Adding driver id: %zu %s(%s)\n", driver,
                 dnl_.getDNLTerminalFromID(driver)

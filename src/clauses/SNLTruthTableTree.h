@@ -34,6 +34,8 @@ public:
     naja::DNL::DNLID termid; // 64-bit
   } data;
 
+  SNLTruthTable truthTable; 
+
   SNLTruthTableTree* tree = nullptr; // 8 bytes
   std::vector<uint32_t, tbb::tbb_allocator<uint32_t>> childrenIds; // typically 24 bytes on LP64
 

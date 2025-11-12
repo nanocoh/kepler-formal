@@ -100,11 +100,9 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectInputs() {
             SNLBitTerm::Direction::Input) {
           auto deps =
               SNLDesignModeling::getCombinatorialInputs(term.getSnlBitTerm());
-          if (/*deps.empty() ||*/ !(
-              term.getSnlBitTerm()
-                  ->getDesign()
-                  ->getTruthTable(term.getSnlBitTerm()->getOrderID())
-                  .isInitialized())) {
+          const auto& tt = SNLDesignModeling::getTruthTable(term.getSnlBitTerm()->getDesign(), 
+              term.getSnlBitTerm()->getOrderID());
+          if (!tt.isInitialized()) {
             assert(termId < naja::DNL::get()->getDNLTerms().size());
             inputs.push_back(termId);
             DEBUG_LOG("Collecting input %s of model %s\n",
@@ -115,14 +113,9 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectInputs() {
                           .getString()
                           .c_str());
           }
-          if (term.getSnlBitTerm()
-                  ->getDesign()
-                  ->getTruthTable(term.getSnlBitTerm()->getOrderID())
-                  .all0() ||
-              term.getSnlBitTerm()
-                  ->getDesign()
-                  ->getTruthTable(term.getSnlBitTerm()->getOrderID())
-                  .all1()) {
+          
+          if (tt.all0() ||
+              tt.all1()) {
             assert(termId < naja::DNL::get()->getDNLTerms().size());
             inputs.push_back(termId);
             DEBUG_LOG("Collecting constant input %s of model %s\n",
@@ -226,8 +219,8 @@ std::vector<DNLID> BuildPrimaryOutputClauses::collectOutputs() {
                 SNLBitTerm::Direction::Input) {
               continue;
             }
-            const auto& tt = tTerm.getSnlBitTerm()->getDesign()->getTruthTable(
-                tTerm.getSnlBitTerm()->getOrderID());
+            const auto& tt = SNLDesignModeling::getTruthTable(tTerm.getSnlBitTerm()->getDesign(), 
+              tTerm.getSnlBitTerm()->getOrderID());
             if (tt.isInitialized()) {
               tts.push_back(tt);
               // print deps

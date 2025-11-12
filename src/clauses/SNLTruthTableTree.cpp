@@ -64,6 +64,15 @@ SNLTruthTableTree::Node::Node(SNLTruthTableTree* t,
   }
   if (tree)
     nodeID = (uint32_t)tree->lastID_++;
+  if (type == Type::Table) {
+    truthTable = SNLDesignModeling::getTruthTable(naja::DNL::get()
+                                             ->getDNLTerminalFromID(data.termid)
+                                             .getDNLInstance()
+                                             .getSNLModel(), naja::DNL::get()
+                                    ->getDNLTerminalFromID(data.termid)
+                                    .getSnlBitTerm()
+                                    ->getOrderID());
+  }
 }
 
 SNLTruthTableTree::Node::~Node() {
@@ -77,14 +86,10 @@ SNLTruthTableTree::Node::~Node() {
 //----------------------------------------------------------------------
 const SNLTruthTable& SNLTruthTableTree::Node::getTruthTable() const {
   if (type == Type::Table) {
-    auto* model = const_cast<SNLDesign*>(naja::DNL::get()
-                                             ->getDNLTerminalFromID(data.termid)
-                                             .getDNLInstance()
-                                             .getSNLModel());
-    return model->getTruthTable(naja::DNL::get()
-                                    ->getDNLTerminalFromID(data.termid)
-                                    .getSnlBitTerm()
-                                    ->getOrderID());
+    if (!truthTable.isInitialized()) {
+      throw std::logic_error("getTruthTable: uninitialized Table node");
+    }
+    return truthTable;
   } else if (type == Type::P || type == Type::Input) {
     return PtableHolder_;
   }
@@ -125,7 +130,7 @@ bool SNLTruthTableTree::Node::eval(const std::vector<bool>& extInputs) const {
   if (type != Type::Table && type != Type::P && type != Type::Input)
     throw std::logic_error("eval: node not Table/P/Input");
 
-  auto tbl = getTruthTable();
+  const auto& tbl = getTruthTable();
   auto arity = tbl.size();
   if (childrenIds.size() != arity)
     throw std::logic_error("TableNode: children count mismatch");
@@ -284,12 +289,7 @@ SNLTruthTableTree::SNLTruthTableTree(naja::DNL::DNLID instid,
     return;
   }
 
-  auto* model = const_cast<SNLDesign*>(
-      naja::DNL::get()->getDNLInstanceFromID(instid).getSNLModel());
-  const auto& table = model->getTruthTable(naja::DNL::get()
-                                               ->getDNLTerminalFromID(termid)
-                                               .getSnlBitTerm()
-                                               ->getOrderID());
+  const auto& table = rootNode->getTruthTable();
 
   auto arity = table.size();
   for (uint32_t i = 0; i < arity; ++i) {
@@ -340,14 +340,9 @@ const SNLTruthTableTree::Node& SNLTruthTableTree::concatBody(
   uint32_t arity = 1;
   std::shared_ptr<Node> newNodeSp;
   if (instid != naja::DNL::DNLID_MAX) {
-    auto* model = const_cast<SNLDesign*>(
-        naja::DNL::get()->getDNLInstanceFromID(instid).getSNLModel());
-    const auto& tbl = model->getTruthTable(naja::DNL::get()
-                                               ->getDNLTerminalFromID(termid)
-                                               .getSnlBitTerm()
-                                               ->getOrderID());
-    arity = tbl.size();
     newNodeSp = std::make_shared<Node>(this, instid, termid, Node::Type::Table);
+    const auto& tbl = newNodeSp->getTruthTable();
+    arity = tbl.size();
     auto iter = termid2nodeid_.find(termid);
     if (iter != termid2nodeid_.end()) {
       DEBUG_LOG(
