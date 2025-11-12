@@ -1,5 +1,5 @@
 // Copyright 2024-2025 keplertech.io
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-3.0
 
 #ifndef SNLTRUTHTABLETREE_H
 #define SNLTRUTHTABLETREE_H

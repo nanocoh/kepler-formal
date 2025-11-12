@@ -1,5 +1,5 @@
 // Copyright 2024-2025 keplertech.io
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-3.0
 
 #include "SNLTruthTableTree.h"
 #include "SNLTruthTable.h"
