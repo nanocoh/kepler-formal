@@ -13,23 +13,6 @@ This project is supported and funded by NLNet through the [NGI0 Entrust](https:/
 
 ## Dependencies
 
-Mandatory dependencies:
-
-1. Boost
-2. [cmake](https://cmake.org): at least 3.22 version.
-For system-specific cmake installation options, please refer to [this link](https://cmake.org/download/).
-3. Python3: for building the SNL Python3 interface. This interface is used to load primitive cells (associated to Verilog parsing)
-and their associated characteristics (for instance: ressource count, timing characteristics, ...).
-
-Optional dependencies:
-
-1. [Doxygen](https://www.doxygen.nl): for the documentation generation.
-
-Embedded dependencies, through git sub modules:
-
-1. [naja-verilog](https://github.com/najaeda/naja-verilog): for verilog parsing.
-2. [google test](https://github.com/google/googletest) for unit testing.
-
 On Ubuntu:
 
 ```bash
