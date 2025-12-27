@@ -81,7 +81,6 @@ public:
   const std::shared_ptr<Node>& nodeFromId(uint32_t id) const;
   bool isInitialized() const;
   void print() const;
-  void simplify();
   void destroy();
 
   size_t getNumNodes() const { return nodes_.size(); }
