@@ -464,4 +464,6 @@ TEST(SNLTruthTableTreeAddChild_Additions, AddChildIdEstablishesParentChildRelati
 
   auto pit = std::find(child->parentIds.begin(), child->parentIds.end(), parentId);
   EXPECT_NE(pit, child->parentIds.end());
+
+  tree.print(); // optional: visualize tree structure
 }
