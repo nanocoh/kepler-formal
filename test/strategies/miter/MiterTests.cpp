@@ -875,7 +875,7 @@ TEST(KeplerCliSubprocessTests, ExampleTestRun) {
                                          "../../../../example/fakeram45_64x15.lib",
                                          "../../../../example/fakeram45_64x32.lib",
                                          "../../../../example/fakeram45_1024x32.lib"});
-    EXPECT_NE(rc, EXIT_SUCCESS);
+    EXPECT_EQ(rc, EXIT_SUCCESS);
 }
 
 // End of appended tests
