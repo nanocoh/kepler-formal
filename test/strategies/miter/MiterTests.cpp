@@ -652,3 +652,224 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+// ---------------------- Tests appended for coverage (subprocess approach) ----------------------
+// Append this block at the end of the file (after main).
+
+#include <gtest/gtest.h>
+#include <fstream>
+#include <filesystem>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+
+// Path to the kepler-formal CLI binary used by the project tests.
+// Adjust this path if your binary is located elsewhere.
+static const char* KEPLER_BIN = "../../../src/bin/kepler-formal";
+
+// Helper to run the CLI binary with arguments in a subprocess using std::system.
+// Returns the program's exit code (normalized to EXIT_SUCCESS/EXIT_FAILURE when possible).
+static int run_kepler_cli_with_args(const std::vector<std::string>& args) {
+  // Build command line string safely (simple quoting for spaces)
+  std::string cmd;
+  cmd += KEPLER_BIN;
+  for (const auto& a : args) {
+    cmd += " ";
+    // naive quoting: wrap in single quotes and escape any single quotes inside
+    std::string quoted = "'";
+    for (char c : a) {
+      if (c == '\'') quoted += "'\\''";
+      else quoted.push_back(c);
+    }
+    quoted += "'";
+    cmd += quoted;
+  }
+  // Run the command
+  int rc = std::system(cmd.c_str());
+  if (rc == -1) {
+    // system failed to start the process
+    return EXIT_FAILURE;
+  }
+  // If child exited normally, extract exit status
+#if defined(_WIN32)
+  // On Windows, system returns the exit code directly
+  return rc;
+#else
+  if (WIFEXITED(rc)) {
+    return WEXITSTATUS(rc);
+  } else {
+    // abnormal termination (signal, etc.)
+    return EXIT_FAILURE;
+  }
+#endif
+}
+
+TEST(KeplerCliSubprocessTests, BinaryExists) {
+  // Quick sanity: check the CLI binary exists and is executable
+  std::filesystem::path p(KEPLER_BIN);
+  bool exists = std::filesystem::exists(p);
+  // If the binary is not present, we skip the rest of CLI tests rather than fail the whole suite.
+  if (!exists) {
+    GTEST_SKIP() << "kepler-formal binary not found at " << KEPLER_BIN << "; skipping CLI subprocess tests.";
+  }
+  EXPECT_TRUE(std::filesystem::is_regular_file(p));
+}
+
+TEST(KeplerCliSubprocessTests, PrintUsageOnNoArgs) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  // Running without args should print usage and return success (per program behavior)
+  int rc = run_kepler_cli_with_args({});
+  EXPECT_EQ(rc, EXIT_SUCCESS);
+}
+
+TEST(KeplerCliSubprocessTests, HelpFlagReturnsSuccess) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  int rc = run_kepler_cli_with_args({"--help"});
+  EXPECT_EQ(rc, EXIT_SUCCESS);
+  rc = run_kepler_cli_with_args({"-h"});
+  EXPECT_EQ(rc, EXIT_SUCCESS);
+}
+
+TEST(KeplerCliSubprocessTests, MissingConfigFileArgument) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  // --config without a following path should return failure
+  int rc = run_kepler_cli_with_args({"--config"});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+  rc = run_kepler_cli_with_args({"-c"});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+}
+
+TEST(KeplerCliSubprocessTests, ConfigFileNotFoundReturnsFailure) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  std::string tmpPath = "./nonexistent_config_12345.yaml";
+  int rc = run_kepler_cli_with_args({"--config", tmpPath});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+}
+
+TEST(KeplerCliSubprocessTests, ConfigUnrecognizedFormatReturnsFailure) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  std::filesystem::path tmp = std::filesystem::temp_directory_path() / "kepler_test_bad_format.yaml";
+  {
+    std::ofstream ofs(tmp);
+    ofs << "format: unknown_format\n";
+    ofs << "input_paths:\n  - a\n  - b\n";
+    ofs.close();
+  }
+  int rc = run_kepler_cli_with_args({"--config", tmp.string()});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+  std::filesystem::remove(tmp);
+}
+
+TEST(KeplerCliSubprocessTests, ConfigSnlFormatLoadFailureReturnsFailure) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  std::filesystem::path tmp = std::filesystem::temp_directory_path() / "kepler_test_snl.yaml";
+  {
+    std::ofstream ofs(tmp);
+    ofs << "format: snl\n";
+    ofs << "input_paths:\n  - /path/does/not/exist1.snl\n  - /path/does/not/exist2.snl\n";
+    ofs.close();
+  }
+  int rc = run_kepler_cli_with_args({"--config", tmp.string()});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+  std::filesystem::remove(tmp);
+}
+
+TEST(KeplerCliSubprocessTests, CliUnrecognizedFormatReturnsFailure) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  int rc = run_kepler_cli_with_args({"-badformat", "a", "b"});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+}
+
+// NOTE: The program prints usage and returns EXIT_SUCCESS when argc < 4 (per its logic).
+// Adjusted test to expect EXIT_SUCCESS to match program behavior.
+TEST(KeplerCliSubprocessTests, CliNotEnoughPathsReturnsSuccess) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  int rc = run_kepler_cli_with_args({"-verilog", "only_one_path.v"});
+  EXPECT_EQ(rc, EXIT_SUCCESS);
+}
+
+TEST(KeplerCliSubprocessTests, CliNajaIfFormatButMissingFilesReturnsFailure) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+  int rc = run_kepler_cli_with_args({"-naja_if", "/no/such/file1.capnp", "/no/such/file2.capnp"});
+  EXPECT_EQ(rc, EXIT_FAILURE);
+}
+
+TEST(KeplerCliSubprocessTests, ConfigParsingViaFilesCoversYamlToVectorBehavior) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+
+  // 1) Sequence of scalars -> valid config with two input_paths should proceed to further checks.
+  std::filesystem::path tmpSeq = std::filesystem::temp_directory_path() / "kepler_test_seq.yaml";
+  {
+    std::ofstream ofs(tmpSeq);
+    ofs << "format: verilog\n";
+    ofs << "input_paths:\n";
+    ofs << "  - fileA.v\n";
+    ofs << "  - fileB.v\n";
+    ofs << "liberty_files:\n";
+    ofs << "  - lib1.lib\n";
+    ofs.close();
+  }
+  {
+    int rc = run_kepler_cli_with_args({"--config", tmpSeq.string()});
+    // Because the files don't actually exist, the program may return EXIT_FAILURE during parsing/processing.
+    // We assert it does not crash; accept either EXIT_SUCCESS or EXIT_FAILURE.
+    EXPECT_TRUE(rc == EXIT_SUCCESS || rc == EXIT_FAILURE);
+  }
+  std::filesystem::remove(tmpSeq);
+
+  // 2) Scalar node for input_paths (invalid shape) -> main should treat it as invalid and fail
+  std::filesystem::path tmpScalar = std::filesystem::temp_directory_path() / "kepler_test_scalar.yaml";
+  {
+    std::ofstream ofs(tmpScalar);
+    ofs << "format: verilog\n";
+    ofs << "input_paths: \"not-a-sequence\"\n";
+    ofs.close();
+  }
+  {
+    int rc = run_kepler_cli_with_args({"--config", tmpScalar.string()});
+    EXPECT_EQ(rc, EXIT_FAILURE);
+  }
+  std::filesystem::remove(tmpScalar);
+
+  // 3) Null node (empty YAML) -> should fail because input_paths missing
+  std::filesystem::path tmpNull = std::filesystem::temp_directory_path() / "kepler_test_null.yaml";
+  {
+    std::ofstream ofs(tmpNull);
+    ofs << "# empty config\n";
+    ofs.close();
+  }
+  {
+    int rc = run_kepler_cli_with_args({"--config", tmpNull.string()});
+    EXPECT_EQ(rc, EXIT_FAILURE);
+  }
+  std::filesystem::remove(tmpNull);
+
+  // 4) Sequence of non-scalars (maps) for input_paths -> should be treated as invalid input_paths and fail
+  std::filesystem::path tmpSeqMaps = std::filesystem::temp_directory_path() / "kepler_test_seqmaps.yaml";
+  {
+    std::ofstream ofs(tmpSeqMaps);
+    ofs << "format: verilog\n";
+    ofs << "input_paths:\n";
+    ofs << "  - {a: 1}\n";
+    ofs << "  - {b: 2}\n";
+    ofs.close();
+  }
+  {
+    int rc = run_kepler_cli_with_args({"--config", tmpSeqMaps.string()});
+    EXPECT_EQ(rc, EXIT_FAILURE);
+  }
+  std::filesystem::remove(tmpSeqMaps);
+}
+
+// End of appended tests

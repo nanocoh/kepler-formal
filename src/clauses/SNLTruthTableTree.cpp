@@ -931,24 +931,24 @@ void SNLTruthTableTree::print() const {
     if (!n)
       continue;
     if (n->type == Node::Type::Table) {
-      DEBUG_LOG("term: %zu nodeID=%u id=%u\n", (size_t)n->data.termid,
+      printf("term: %zu nodeID=%u id=%u\n", (size_t)n->data.termid,
                 n->nodeID, n->nodeID);
     } else if (n->type == Node::Type::P) {
-      DEBUG_LOG("P nodeID=%u id=%u\n", n->nodeID, n->nodeID);
+      printf("P nodeID=%u id=%u\n", n->nodeID, n->nodeID);
     } else {
-      DEBUG_LOG("Input node index=%u nodeID=%u id=%u\n", n->data.inputIndex,
+      printf("Input node index=%u nodeID=%u id=%u\n", n->data.inputIndex,
                 n->nodeID, n->nodeID);
     }
     for (size_t i = 0; i < n->childrenIds.size(); ++i) {
       uint32_t cid = n->childrenIds[i];
       auto ch = nodeFromId(cid);
       if (!ch) {
-        DEBUG_LOG("  child[%zu] = null (childId=%u)\n", i, cid);
+        printf("  child[%zu] = null (childId=%u)\n", i, cid);
       } else if (ch->type == Node::Type::Input) {
-        DEBUG_LOG("  child[%zu] = Input(%u) id=%u\n", i, ch->data.inputIndex,
+        printf("  child[%zu] = Input(%u) id=%u\n", i, ch->data.inputIndex,
                   ch->nodeID);
       } else {
-        DEBUG_LOG("  child[%zu] = Node(id=%u)\n", i, cid);
+        printf("  child[%zu] = Node(id=%u)\n", i, cid);
         stk.push_back(cid);
       }
     }
