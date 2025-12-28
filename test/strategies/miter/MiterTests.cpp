@@ -866,8 +866,7 @@ TEST(KeplerCliSubprocessTests, ConfigParsingViaFilesCoversYamlToVectorBehavior) 
   std::filesystem::remove(tmpSeqMaps);
 }
 
-// A test that run with yaml file and run on root/example/test_config_naja_if.yaml
-TEST(KeplerCliSubprocessTests, ConfigNajaIfExampleFileRuns) {
+TEST(KeplerCliSubprocessTests, ExampleTestRun) {
   std::filesystem::path p(KEPLER_BIN);
   if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
 
