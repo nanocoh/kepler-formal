@@ -866,4 +866,17 @@ TEST(KeplerCliSubprocessTests, ConfigParsingViaFilesCoversYamlToVectorBehavior) 
   std::filesystem::remove(tmpSeqMaps);
 }
 
+// A test that run with yaml file and run on root/example/test_config_naja_if.yaml
+TEST(KeplerCliSubprocessTests, ConfigNajaIfExampleFileRuns) {
+  std::filesystem::path p(KEPLER_BIN);
+  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+
+  int rc = run_kepler_cli_with_args({"-verilog", "../../../../example/tinyrocket.v", "../../../../example/tinyrocket.v", 
+                                         "../../../../example/NangateOpenCellLibrary_typical.lib",
+                                         "../../../../example/fakeram45_64x15.lib",
+                                         "../../../../example/fakeram45_64x32.lib",
+                                         "../../../../example/fakeram45_1024x32.lib"});
+    EXPECT_NE(rc, EXIT_SUCCESS);
+}
+
 // End of appended tests
