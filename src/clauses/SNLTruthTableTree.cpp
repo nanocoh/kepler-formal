@@ -919,6 +919,7 @@ bool SNLTruthTableTree::isInitialized() const {
   return true;
 }
 
+// LCOV EXCL_START
 void SNLTruthTableTree::print() const {
   if (rootId_ == kInvalidId)
     return;
@@ -954,6 +955,8 @@ void SNLTruthTableTree::print() const {
     }
   }
 }
+
+// LCOV EXCL_STOP
 
 //----------------------------------------------------------------------
 // destroy
