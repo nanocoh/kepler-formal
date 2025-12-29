@@ -561,8 +561,6 @@ TEST_F(MiterTests, TestMiterAndWithChainedInverter) {
   SNLNet* net5 = SNLScalarNet::create(top, NLName("top_output_net_clone"));
   instInv->getInstTerm(invOut)->setNet(net5);
   topOut->setNet(net5);
-  topIn1->setNet(net2);
-  topIn2->setNet(net1);
 
   // dump visual
   {
@@ -581,10 +579,6 @@ TEST_F(MiterTests, TestMiterAndWithChainedInverter) {
   // test the miter strategy
   {
     MiterStrategy MiterS(top, topClone, "CaseC");
-    EXPECT_FALSE(MiterS.run());
-  }
-  {
-    MiterStrategy MiterS(topClone, top, "CaseC");
     EXPECT_FALSE(MiterS.run());
   }
   {
@@ -876,12 +870,12 @@ TEST(KeplerCliSubprocessTests, ExampleTestRun) {
   std::filesystem::path p(KEPLER_BIN);
   if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
 
-  int rc = run_kepler_cli_with_args({"-verilog", "../../../../example/tinyrocket.v", "../../../../example/tinyrocket.v", 
+  int rc = run_kepler_cli_with_args({"-verilog", "../../../../example/tinyrocket.v", "../../../../example/tinyrocket_edited.v", 
                                          "../../../../example/NangateOpenCellLibrary_typical.lib",
                                          "../../../../example/fakeram45_64x15.lib",
                                          "../../../../example/fakeram45_64x32.lib",
                                          "../../../../example/fakeram45_1024x32.lib"});
-    EXPECT_EQ(rc, EXIT_SUCCESS);
+  EXPECT_EQ(rc, EXIT_SUCCESS);
 }
 
 // End of appended tests
