@@ -561,6 +561,8 @@ TEST_F(MiterTests, TestMiterAndWithChainedInverter) {
   SNLNet* net5 = SNLScalarNet::create(top, NLName("top_output_net_clone"));
   instInv->getInstTerm(invOut)->setNet(net5);
   topOut->setNet(net5);
+  topIn1->setNet(net2);
+  topIn2->setNet(net1);
 
   // dump visual
   {
@@ -579,6 +581,10 @@ TEST_F(MiterTests, TestMiterAndWithChainedInverter) {
   // test the miter strategy
   {
     MiterStrategy MiterS(top, topClone, "CaseC");
+    EXPECT_FALSE(MiterS.run());
+  }
+  {
+    MiterStrategy MiterS(topClone, top, "CaseC");
     EXPECT_FALSE(MiterS.run());
   }
   {
