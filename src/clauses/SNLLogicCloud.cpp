@@ -24,11 +24,13 @@ tbb::concurrent_vector<IterationInputsETSPair*> newIterationInputsETSvector =
     tbb::concurrent_vector<IterationInputsETSPair*>(40, nullptr);
 
 void initCurrentIterationInputsETS() {
+  // LCOV_EXCL_START
   if (currentIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
     for (size_t i = currentIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
       currentIterationInputsETSvector.push_back(nullptr);
     }
   }
+  // LCOV_EXCL_STOP
   if (currentIterationInputsETSvector
           [tbb::this_task_arena::current_thread_index()] == nullptr) {
     currentIterationInputsETSvector
@@ -43,11 +45,13 @@ IterationInputsETSPair& getCurrentIterationInputsETS() {
 }
 
 void initNewIterationInputsETS() {
+  // LCOV_EXCL_START
   if (newIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
     for (size_t i = newIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
       newIterationInputsETSvector.push_back(nullptr);
     }
   }
+  // LCOV_EXCL_STOP
   if (newIterationInputsETSvector
           [tbb::this_task_arena::current_thread_index()] == nullptr) {
     newIterationInputsETSvector[tbb::this_task_arena::current_thread_index()] =
