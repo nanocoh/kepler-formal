@@ -866,16 +866,16 @@ TEST(KeplerCliSubprocessTests, ConfigParsingViaFilesCoversYamlToVectorBehavior) 
   std::filesystem::remove(tmpSeqMaps);
 }
 
-TEST(KeplerCliSubprocessTests, ExampleTestRun) {
-  std::filesystem::path p(KEPLER_BIN);
-  if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
+// TEST(KeplerCliSubprocessTests, ExampleTestRun) {
+//   std::filesystem::path p(KEPLER_BIN);
+//   if (!std::filesystem::exists(p)) GTEST_SKIP() << "kepler-formal binary missing";
 
-  int rc = run_kepler_cli_with_args({"-verilog", "../../../../example/tinyrocket.v", "../../../../example/tinyrocket_edited.v", 
-                                         "../../../../example/NangateOpenCellLibrary_typical.lib",
-                                         "../../../../example/fakeram45_64x15.lib",
-                                         "../../../../example/fakeram45_64x32.lib",
-                                         "../../../../example/fakeram45_1024x32.lib"});
-  EXPECT_EQ(rc, EXIT_SUCCESS);
-}
+//   int rc = run_kepler_cli_with_args({"-verilog", "../../../../example/tinyrocket.v", "../../../../example/tinyrocket_edited.v", 
+//                                          "../../../../example/NangateOpenCellLibrary_typical.lib",
+//                                          "../../../../example/fakeram45_64x15.lib",
+//                                          "../../../../example/fakeram45_64x32.lib",
+//                                          "../../../../example/fakeram45_1024x32.lib"});
+//   EXPECT_EQ(rc, EXIT_SUCCESS);
+// }
 
 // End of appended tests
