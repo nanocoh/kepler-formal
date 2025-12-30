@@ -25,7 +25,7 @@ tbb::concurrent_vector<IterationInputsETSPair*> newIterationInputsETSvector =
 
 void initCurrentIterationInputsETS() {
   if (currentIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
-    for (size_t i = termsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+    for (size_t i = currentIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
       currentIterationInputsETSvector.push_back(nullptr);
     }
   }
@@ -44,7 +44,7 @@ IterationInputsETSPair& getCurrentIterationInputsETS() {
 
 void initNewIterationInputsETS() {
   if (newIterationInputsETSvector.size() <= tbb::this_task_arena::current_thread_index()) {
-    for (size_t i = termsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
+    for (size_t i = newIterationInputsETSvector.size(); i <= tbb::this_task_arena::current_thread_index(); i++) {
       newIterationInputsETSvector.push_back(nullptr);
     }
   }
