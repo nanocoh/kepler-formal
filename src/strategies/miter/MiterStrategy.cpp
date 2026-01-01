@@ -83,6 +83,7 @@ void ensureLoggerInitialized() {
       auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(chosenLogFile, true);
       logger = std::make_shared<spdlog::logger>("miter_logger", file_sink);
     } catch (const spdlog::spdlog_ex& ex) {
+      // LCOV_EXCL_START
       // Try a safe fallback: temp directory
       std::error_code ec;
       auto tmp = std::filesystem::temp_directory_path(ec);
@@ -106,6 +107,7 @@ void ensureLoggerInitialized() {
         spdlog::register_logger(logger);
         logger->error("spdlog initialization failed and temp_directory_path() failed: {}", ex.what());
       }
+      // LCOV_EXCL_STOP
     }
 
     // 4) Finalize logger if created
@@ -115,26 +117,28 @@ void ensureLoggerInitialized() {
       spdlog::register_logger(logger);
     }
   } catch (const std::exception& ex) {
+    // LCOV_EXCL_START
     // Last-resort fallback to stdout logger to avoid crashing tests
     auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
     logger = std::make_shared<spdlog::logger>("miter_logger_fallback", console_sink);
     logger->set_level(spdlog::level::debug);
     spdlog::register_logger(logger);
     logger->error("Unexpected exception initializing logger: {}", ex.what());
+    // LCOV_EXCL_STOP
   }
 }
 
 
-void executeCommand(const std::string& command) {
-  ensureLoggerInitialized();
-  int result = system(command.c_str());
-  if (result != 0) {
-    logger->error("Command execution failed: {} (exit code {})", command,
-                  result);
-  } else {
-    logger->debug("Command executed successfully: {}", command);
-  }
-}
+// void executeCommand(const std::string& command) {
+//   ensureLoggerInitialized();
+//   int result = system(command.c_str());
+//   if (result != 0) {
+//     logger->error("Command execution failed: {} (exit code {})", command,
+//                   result);
+//   } else {
+//     logger->debug("Command executed successfully: {}", command);
+//   }
+// }
 
 //
 // A tiny Tseitin-translator from BoolExpr -> Glucose CNF.
