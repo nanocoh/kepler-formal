@@ -906,21 +906,21 @@ TEST_F(MiterTests, CoverDiff) {
   // 6. create a logic_1 instace in top
   SNLInstance* inst2 = SNLInstance::create(top, logic1, NLName("logic1"));
   // 7. create a and model
-  SNLDesign* andModel =
+  SNLDesign* seqModel =
       SNLDesign::create(library, SNLDesign::Type::Primitive, NLName("AND"));
 
   // add 2 inputs and 1 output to and
   auto andIn1 =
-      SNLScalarTerm::create(andModel, SNLTerm::Direction::Input, NLName("in1"));
+      SNLScalarTerm::create(seqModel, SNLTerm::Direction::Input, NLName("in1"));
   auto andIn2 =
-      SNLScalarTerm::create(andModel, SNLTerm::Direction::Input, NLName("in2"));
-  auto andOut = SNLScalarTerm::create(andModel, SNLTerm::Direction::Output,
+      SNLScalarTerm::create(seqModel, SNLTerm::Direction::Input, NLName("in2"));
+  auto andOut = SNLScalarTerm::create(seqModel, SNLTerm::Direction::Output,
                                       NLName("out"));
   // 8. create a and instance in top
-  SNLInstance* inst3 = SNLInstance::create(top, andModel, NLName("and"));
-  SNLInstance* inst4 = SNLInstance::create(top, andModel, NLName("and2"));
+  SNLInstance* inst3 = SNLInstance::create(top, seqModel, NLName("and"));
+  SNLInstance* inst4 = SNLInstance::create(top, seqModel, NLName("and2"));
   // set truth table for and model
-  SNLDesignModeling::setTruthTable(andModel, SNLTruthTable(2, 8));
+  //SNLDesignModeling::setTruthTable(andModel, SNLTruthTable(2, 8));
   // 9. connect all instances inputs
   SNLNet* net1 = SNLScalarNet::create(top, NLName("logic_0_net"));
   net1->setType(SNLNet::Type::Assign0);
@@ -980,7 +980,7 @@ TEST_F(MiterTests, CoverDiff) {
   get(); 
   naja::DNL::destroy();
   MiterStrategy MiterS(topClone0, topClone1, "CaseD");
-    EXPECT_TRUE(MiterS.run());
+    EXPECT_FALSE(MiterS.run());
 }
 
 TEST(KeplerCliSubprocessTests, ExampleTestRun) {
